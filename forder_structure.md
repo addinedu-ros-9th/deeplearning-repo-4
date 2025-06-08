@@ -15,3 +15,5 @@ deeplearning-repo-4/
 │   │   └── visualizer.py       # 결과 시각화 (matplotlib 등)
 ├── forder_structure.md # 폴더 구조 설명 파일
 ├── README.md           # 프로젝트 설명 파일
+
+export PYTHONPATH=/home/wonho/deeplearning-repo-4/src:$PYTHONPATH
