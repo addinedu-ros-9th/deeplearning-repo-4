@@ -6,7 +6,7 @@ deeplearning-repo-4/
 │   │   └── 
 │   ├── trains/         # 학습 관련 코드 폴더
 │   │   ├── abandon_train.py    # 유기
-│   │   ├── damage_train.py     # 파손
+│   │   ├── broken_train.py     # 파손
 │   │   ├── lightoff_train.py   # 전등 끔
 │   │   └── theft_train.py      # 절도
 │   ├── utils/          # 유틸리티 코드 폴더
