@@ -1,0 +1,184 @@
+@font-face {
+    font-family: "Inter";
+    src: url("./fonts/Inter-ExtraLight.ttf") format("truetype");
+    font-weight: 100;
+}
+@font-face {
+    font-family: "Inter";
+    src: url("./fonts/Inter-Light.ttf") format("truetype");
+    font-weight: 300;
+}
+@font-face {
+    font-family: "Inter";
+    src: url("./fonts/Inter-Regular.ttf") format("truetype");
+    font-weight: 400;
+}
+@font-face {
+    font-family: "Inter";
+    src: url("./fonts/Inter-Medium.ttf") format("truetype");
+    font-weight: 500;
+}
+@font-face {
+    font-family: "Inter";
+    src: url("./fonts/Inter-SemiBold.ttf") format("truetype");
+    font-weight: 600;
+}
+@font-face {
+    font-family: "Inter";
+    src: url("./fonts/Inter-Bold.ttf") format("truetype");
+    font-weight: 700;
+}
+@font-face {
+    font-family: "Inter";
+    src: url("./fonts/Inter-Black.ttf") format("truetype");
+    font-weight: 900;
+}
+* {
+    font-family: "Inter", sans-serif ;
+    margin: 0 ;
+    padding: 0 ;
+    font-size: 14px;
+    background: none;
+    border: none;
+}
+
+#logoBtn {
+    qproperty-icon: url("./style/icons/ico-logo.png");
+    qproperty-iconSize: 30px 30px;
+    font-weight: 700;
+    font-size: 20px;
+    color: white;
+    background-color: {{primary}};
+}
+
+#logoBtn:hover {
+    background-color: {{primary_dark}};
+}
+
+#menuBtn1,
+#menuBtn2,
+#menuBtn3 {
+    font-weight: 700;
+    font-size: 16px;
+    color: #666;
+    border-radius: 2px;
+    padding-top: 30px;
+}
+#menuBtn1Icon {
+    background: url("./style/icons/ico-cctv.png") no-repeat center center;
+    background-size: contain;
+}
+
+#menuBtn2Icon {
+    background: url("./style/icons/ico-dashboard.png") no-repeat center center;
+    background-size: contain;
+}
+
+#menuBtn3Icon {
+    background: url("./style/icons/ico-log.png") no-repeat center center;
+    background-size: contain;
+}
+
+#menuBtn1:hover,
+#menuBtn2:hover,
+#menuBtn3:hover {
+    color: black;
+    background-color: rgba(3, 180, 200, 0.1);
+}
+
+#menuBtn1-active,
+#menuBtn2-active,
+#menuBtn3-active {
+    font-weight: 700;
+    font-size: 16px;
+    color: black;
+    background-color: rgba(3, 180, 200, 0.1);
+    border-radius: 2px;
+    padding-top: 30px;
+}
+
+#verLine,
+#horLine {
+    background-color: #ccc; /* 선의 색상 */
+}
+
+#locTitle,
+#locDepth1,
+#locDepth2,
+#locDivider,
+#locArrow {
+    font-weight: 700;
+    font-size: 16px;
+    color: #999;
+}
+
+#locDepth1-active {
+    font-weight: 700;
+    font-size: 16px;
+    color: #333;
+}
+
+#hidden {
+    opacity: 0;
+    min-height: 0;
+    max-height: 0;
+    font-size: 0;
+}
+
+#notiBtn {
+    qproperty-icon: url("./style/icons/ico-noti-active.svg");
+    /* qproperty-icon: url("./style/icons/ico-noti.svg"); */
+    qproperty-iconSize: 30px 30px; /* 아이콘 크기 설정 */
+    min-width: 30px;
+    max-width: 30px;
+    min-height: 30px;
+    max-height: 30px;
+    border-radius: 2px;
+}
+
+#userBtn {
+    qproperty-icon: url("./style/icons/ico-dropdown.svg");
+    qproperty-iconSize: 12px 7px; 
+    border-radius: 2px;
+    text-align: left; 
+    padding-right: 10px;
+    padding-left: 10px;
+}
+
+#notiBtn:hover,
+#userBtn:hover {
+    background-color: #eee;
+}
+
+#popoverBg {
+    background-color: white;
+    border-radius: 2px;
+    border: 1px solid #ccc;
+}
+
+#userId {
+    font-weight: 700;
+    font-size: 14px;
+    color: #666;
+}
+
+#userEmail {
+    font-weight: 300;
+    font-size: 12px;
+    color: #666;
+}
+
+#logoutBtn {
+    qproperty-icon: url("./style/icons/ico-logout.svg");
+    qproperty-iconSize: 24px 24px; 
+    text-align: left; 
+    border-top: 1px solid #ccc;
+    font-weight: 700;
+    font-size: 14px;
+    color: #000;
+    padding: 0 15px;
+}
+
+#logoutBtn:hover {
+    background-color: #eee;
+}
