@@ -26,8 +26,8 @@ def main():
                     break
                 data += packet
             
-            # 데이터를 프레임으로 변환
-            frame = pickle.loads(data)
+            # JPEG 데이터를 프레임으로 디코딩
+            frame = cv2.imdecode(np.frombuffer(data, dtype=np.uint8), cv2.IMREAD_COLOR)
             
             # 화면에 표시
             cv2.imshow('Receiving...', frame)

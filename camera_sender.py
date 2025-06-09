@@ -19,18 +19,19 @@ def main():
             if not ret:
                 break
                 
-            # 프레임 크기 조정 (선택사항)
-            frame = cv2.resize(frame, (640, 480))
+            # 프레임 크기 조정 (더 작게)
+            frame = cv2.resize(frame, (320, 240))
             
-            # 프레임을 바이트로 직렬화
-            data = pickle.dumps(frame)
+            # JPEG로 인코딩 (압축)
+            encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 70]
+            _, encoded_frame = cv2.imencode('.jpg', frame, encode_param)
             
             # 데이터 크기 전송
-            message_size = struct.pack("L", len(data))
+            message_size = struct.pack("L", len(encoded_frame))
             sock.sendto(message_size, server_address)
             
             # 실제 데이터 전송
-            sock.sendto(data, server_address)
+            sock.sendto(encoded_frame.tobytes(), server_address)
             
             # 화면에 표시 (선택사항)
             cv2.imshow('Sending...', frame)
