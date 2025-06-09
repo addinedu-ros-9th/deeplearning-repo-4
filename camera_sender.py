@@ -8,6 +8,11 @@ def main():
     # 웹캠 초기화
     cap = cv2.VideoCapture(0)
     
+    # 원본 해상도 확인
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    print(f"Camera resolution: {width}x{height}")
+    
     # UDP 소켓 생성
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     server_address = ('192.168.0.7', 9999)  # 수신자 컴퓨터의 유선 IP 주소
@@ -18,12 +23,9 @@ def main():
             ret, frame = cap.read()
             if not ret:
                 break
-                
-            # 프레임 크기 조정 (더 작게)
-            frame = cv2.resize(frame, (320, 240))
             
             # JPEG로 인코딩 (압축)
-            encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 70]
+            encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 80]  # 품질 80%로 설정
             _, encoded_frame = cv2.imencode('.jpg', frame, encode_param)
             
             # 데이터 크기 전송
