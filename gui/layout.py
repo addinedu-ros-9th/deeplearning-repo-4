@@ -6,8 +6,7 @@ from PyQt6 import *
 from PyQt6.QtGui import *
 from PyQt6.QtCore import *
 from PyQt6.QtWidgets import *
-
-from colors import colors
+from style import apply_style
 
 class NotiPopover(QWidget):
     def __init__(self, parent=None):
@@ -81,17 +80,7 @@ class Main(QMainWindow):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     # QSS 파일 로드
-    with open("./style/qss/layout.qss", "r") as f:
-        style = f.read()
-        for key, value in colors.items():
-            style = style.replace("{{" + key + "}}", value)
-        app.setStyleSheet(style)
-
-    # 폰트 설정
-    font_id = QFontDatabase.addApplicationFont("./style/fonts/Inter-VariableFont.ttf")
-    font_family = QFontDatabase.applicationFontFamilies(font_id)[0]
-    font = QFont(font_family)
-    app.setFont(font)
+    apply_style(app)
 
     main = Main()
     main.show()

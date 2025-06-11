@@ -1,0 +1,79 @@
+#login_bg {
+    background: url("./style/images/login-bg.png") no-repeat center center;
+    background-size: contain;
+}
+
+#login_logo {
+    qproperty-icon: url("./style/images/login-logo.png");
+    qproperty-iconSize: 50px 50px;
+    font-weight: 900;
+    font-size: 50px;
+    color: {{primary}};
+}
+
+#login_greeting {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+#login_desc1,
+#login_desc2 {
+    font-size: 16px;
+    color: #999;
+    font-weight: 300;
+}
+
+#login_id,
+#login_password {
+    font-size: 14px;
+    color: #333;
+}
+#login_div {
+    border-bottom: 1px dotted #666;
+}
+
+#login_textfield1,
+#login_textfield2 {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 0 15px;
+    height: 44px;
+}
+
+#login_textfield1:focus,
+#login_textfield2:focus {
+    border: 1px solid {{primary}}; /* 더 진한 색상과 두께 */
+    outline: none;
+}
+
+#login_checkbox {
+    font-size: 14px;
+    color: #999;
+}
+
+#login_checkbox::indicator {
+    width: 20px;
+    height: 20px;
+}
+
+#login_checkbox::indicator:unchecked {
+    image: url("./style/images/checkbox_unchecked.png");
+}
+
+#login_checkbox::indicator:checked {
+    image: url("./style/images/checkbox_checked.png");
+}
+
+#login_btn {
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: bold;
+    height: 44px;
+    background-color: {{primary}};
+}
+
+#login_btn:hover {
+    background-color: {{primary_dark}};
+}
