@@ -7,14 +7,7 @@ from PyQt6.QtGui import *
 from PyQt6.QtCore import *
 from PyQt6.QtWidgets import *
 
-color = {
-    "primary" : "#03B4C8",
-    "primary_dark" : "#0E9FAF",
-    "secondary" : "#345984",
-    "therity" : "#F98CAB",
-    "fourth" : "#F2CD3B",
-    "fourth_dark" : "#D7B017",
-}
+from colors import colors
 
 class NotiPopover(QWidget):
     def __init__(self, parent=None):
@@ -52,7 +45,7 @@ class UserPopover(QWidget):
 class Main(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("CCTV Store")
+        self.setWindowTitle("Gigachad | CCTV")
         # .ui 파일 로드
         loadUi("layout.ui", self)
 
@@ -88,9 +81,9 @@ class Main(QMainWindow):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     # QSS 파일 로드
-    with open("style.qss", "r") as f:
+    with open("./style/qss/layout.qss", "r") as f:
         style = f.read()
-        for key, value in color.items():
+        for key, value in colors.items():
             style = style.replace("{{" + key + "}}", value)
         app.setStyleSheet(style)
 

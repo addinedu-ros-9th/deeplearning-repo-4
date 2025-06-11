@@ -43,7 +43,7 @@
 }
 
 #logoBtn {
-    qproperty-icon: url("./style/icons/ico-logo.png");
+    qproperty-icon: url("./style/images/ico-logo.png");
     qproperty-iconSize: 30px 30px;
     font-weight: 700;
     font-size: 20px;
@@ -65,17 +65,17 @@
     padding-top: 30px;
 }
 #menuBtn1Icon {
-    background: url("./style/icons/ico-cctv.png") no-repeat center center;
+    background: url("./style/images/ico-cctv.png") no-repeat center center;
     background-size: contain;
 }
 
 #menuBtn2Icon {
-    background: url("./style/icons/ico-dashboard.png") no-repeat center center;
+    background: url("./style/images/ico-dashboard.png") no-repeat center center;
     background-size: contain;
 }
 
 #menuBtn3Icon {
-    background: url("./style/icons/ico-log.png") no-repeat center center;
+    background: url("./style/images/ico-log.png") no-repeat center center;
     background-size: contain;
 }
 
@@ -126,8 +126,8 @@
 }
 
 #notiBtn {
-    qproperty-icon: url("./style/icons/ico-noti-active.svg");
-    /* qproperty-icon: url("./style/icons/ico-noti.svg"); */
+    qproperty-icon: url("./style/images/ico-noti-active.svg");
+    /* qproperty-icon: url("./style/images/ico-noti.svg"); */
     qproperty-iconSize: 30px 30px; /* 아이콘 크기 설정 */
     min-width: 30px;
     max-width: 30px;
@@ -137,7 +137,7 @@
 }
 
 #userBtn {
-    qproperty-icon: url("./style/icons/ico-dropdown.svg");
+    qproperty-icon: url("./style/images/ico-dropdown.svg");
     qproperty-iconSize: 12px 7px; 
     border-radius: 2px;
     text-align: left; 
@@ -169,7 +169,7 @@
 }
 
 #logoutBtn {
-    qproperty-icon: url("./style/icons/ico-logout.svg");
+    qproperty-icon: url("./style/images/ico-logout.svg");
     qproperty-iconSize: 24px 24px; 
     text-align: left; 
     border-top: 1px solid #ccc;
