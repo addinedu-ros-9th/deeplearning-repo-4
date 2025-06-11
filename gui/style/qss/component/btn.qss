@@ -1,0 +1,23 @@
+.btn {
+    border-radius: {{radius}};
+}
+
+.btn.contained {
+    color: white;
+    border: none;
+}
+
+.btn.contained.primary {
+    
+    background-color: {{primary}};
+}
+
+.btn.contained.primary:hover {
+    background-color: {{primary_dark}};
+}
+
+.btn.large {
+    font-weight: bold;
+    font-size: 16px;
+    height: 44px;
+}

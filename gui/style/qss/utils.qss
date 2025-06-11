@@ -1,0 +1,48 @@
+/* default setting */
+* {
+    margin: 0 ;
+    padding: 0 ;
+    background: none;
+    border: none;
+}
+
+/* bg */
+.bg.gray6 { background-color: #666; }
+.bg.gray9 { background-color: #999; }
+.bg.grayc { background-color: #ccc; }
+
+/* text color */
+.color-white { color: white; }
+.color-black { color: black; }
+.color-gray6 { color: #666;  }
+.color-gray9 { color: #999;  }
+.color-grayc { color: #ccc;  }
+.color-primary      { color: {{primary}};      }
+.color-primary_dark { color: {{primary_dark}}; }
+.color-secondary    { color: {{secondary}};    }
+.color-therity      { color: {{tertiary}};     }
+.color-fourth       { color: {{fourth}};       } 
+.color-fourth_dark  { color: {{fourth_dark}};  }
+
+/* font size */
+.size10 { font-size: 10px; }
+.size12 { font-size: 12px; }
+.size14 { font-size: 14px; }
+.size16 { font-size: 16px; }
+.size18 { font-size: 18px; }
+.size20 { font-size: 20px; }
+.size22 { font-size: 22px; }
+.size24 { font-size: 24px; }
+.size28 { font-size: 28px; }
+.size32 { font-size: 32px; }
+.size50 { font-size: 50px; }
+
+/* font weight */
+.weight300 { font-weight: 300; }
+.weight400 { font-weight: 400; }
+.weight500 { font-weight: 500; }
+.weight600 { font-weight: 600; }
+.weight700 { font-weight: 700; }
+.weight800 { font-weight: 800; }
+.weight900 { font-weight: 900; }
+
