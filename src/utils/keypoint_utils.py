@@ -1,6 +1,9 @@
 # 키포인트 관련 유틸리티 함수
 
 import xml.etree.ElementTree as ET
+import numpy as np
+import torch
+from sklearn.utils.class_weight import compute_class_weight
 
 KEYPOINT_ORDER = [
     'Pelvis', 'Left hip', 'Left knee', 'Left foot',
@@ -20,6 +23,10 @@ ACTION_LABELS = {
 ACTIONS = ['abandon', 'broken', 'theft', 'normal']
 SPLITS = ['train', 'val']
 NUM_KEYPOINTS = 17
+
+LABELS = ACTION_LABELS
+NUM_CLASSES = len(LABELS)
+INV_LABELS = {v: k for k, v in LABELS.items()}
 
 # XML에서 관절점, id, 프레임별로 추출
 
@@ -62,3 +69,7 @@ def get_action_frames(xml_path, action):
         action_frames.append((start, end))
     
     return action_frames
+
+def get_class_weights(labels):
+    class_weights = compute_class_weight('balanced', classes=np.arange(NUM_CLASSES), y=labels)
+    return torch.tensor(class_weights, dtype=torch.float32)

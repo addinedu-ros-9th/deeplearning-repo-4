@@ -8,7 +8,7 @@ from modules.keypoint_extractor import extract_keypoints_all
 DATA_ROOT = '/home/ckim/dev_ws/project_ws/mldl_project/data/videos'
 FEATURE_ROOT = '/home/ckim/dev_ws/project_ws/mldl_project/data/features'
 
-if __name__ == '__main__':
+def main():
     # 모든 행동/분할에 대해 처리
     for action in ACTIONS:
         for split in SPLITS:
@@ -59,3 +59,7 @@ if __name__ == '__main__':
                         
                         # 동일 영상에 여러 액션이 있을 경우 _0, _1, ... 와 같이 저장
                         np.save(os.path.join(feature_dir, f'{base}_{action}_{i}.npy'), arr)
+
+
+if __name__ == '__main__':
+    main()
