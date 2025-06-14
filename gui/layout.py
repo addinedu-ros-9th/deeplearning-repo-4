@@ -47,14 +47,22 @@ class Main(QMainWindow):
         self.setWindowTitle("Gigachad | CCTV")
         # .ui 파일 로드
         loadUi("layout.ui", self)
-
-        self.menuBtn1.setObjectName("menuBtn1-active")
+        # 네임 설정
         self.locTitle.setText("CCTV")
         self.locDepth1.setText("전체 매장")
-        self.locDepth1.setObjectName("locDepth1-active")
-        self.locDepth2.setObjectName("hidden")
-        self.locArrow.setObjectName("hidden")
         self.userBtn.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+
+        # 클래스 지정      
+        self.menuBtn1.setProperty("class", "menuBtn1 active")
+        self.menuBtn2.setProperty("class", "menuBtn2")
+        self.menuBtn3.setProperty("class", "menuBtn3")
+        self.verLine.setProperty("class", "bg grayc")
+        self.horLine.setProperty("class", "bg grayc")
+        self.locTitle.setProperty("class", "weight700 size16 color-gray9")
+        self.locDepth1.setProperty("class", "weight700 size16 color-gray9 active")
+        self.locDepth2.setProperty("class", "weight700 size16 color-gray9 hidden")
+        self.locDivider.setProperty("class", "weight700 size16 color-gray9")
+        self.locArrow.setProperty("class", "weight700 size16 color-gray9 hidden")
 
         self.notiBtn.clicked.connect(self.show_noti_popover)
         self.userBtn.clicked.connect(self.show_user_popover)

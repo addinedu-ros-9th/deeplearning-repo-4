@@ -16,6 +16,7 @@
 .color-black { color: black; }
 .color-gray6 { color: #666;  }
 .color-gray9 { color: #999;  }
+.color-gray9.active { color: #333; }
 .color-grayc { color: #ccc;  }
 .color-primary      { color: {{primary}};      }
 .color-primary_dark { color: {{primary_dark}}; }
@@ -46,3 +47,10 @@
 .weight800 { font-weight: 800; }
 .weight900 { font-weight: 900; }
 
+/* etc */
+.hidden {
+    opacity: 0;
+    min-height: 0;
+    max-height: 0;
+    font-size: 0;
+}

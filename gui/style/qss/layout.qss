@@ -1,5 +1,3 @@
-
-
 #logoBtn {
     qproperty-icon: url("./style/images/ico-logo.png");
     qproperty-iconSize: 30px 30px;
@@ -13,9 +11,9 @@
     background-color: {{primary_dark}};
 }
 
-#menuBtn1,
-#menuBtn2,
-#menuBtn3 {
+.menuBtn1,
+.menuBtn2,
+.menuBtn3 {
     font-weight: 700;
     font-size: 16px;
     color: #666;
@@ -37,50 +35,22 @@
     background-size: contain;
 }
 
-#menuBtn1:hover,
-#menuBtn2:hover,
-#menuBtn3:hover {
+.menuBtn1:hover,
+.menuBtn2:hover,
+.menuBtn3:hover {
     color: black;
     background-color: rgba(3, 180, 200, 0.1);
 }
 
-#menuBtn1-active,
-#menuBtn2-active,
-#menuBtn3-active {
+.menuBtn1.active,
+.menuBtn2.active,
+.menuBtn3.active {
     font-weight: 700;
     font-size: 16px;
     color: black;
     background-color: rgba(3, 180, 200, 0.1);
     border-radius: 2px;
     padding-top: 30px;
-}
-
-#verLine,
-#horLine {
-    background-color: #ccc; /* 선의 색상 */
-}
-
-#locTitle,
-#locDepth1,
-#locDepth2,
-#locDivider,
-#locArrow {
-    font-weight: 700;
-    font-size: 16px;
-    color: #999;
-}
-
-#locDepth1-active {
-    font-weight: 700;
-    font-size: 16px;
-    color: #333;
-}
-
-#hidden {
-    opacity: 0;
-    min-height: 0;
-    max-height: 0;
-    font-size: 0;
 }
 
 #notiBtn {
