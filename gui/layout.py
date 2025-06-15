@@ -7,6 +7,8 @@ from PyQt6.QtGui import *
 from PyQt6.QtCore import *
 from PyQt6.QtWidgets import *
 
+from cctv import CCTVWidget
+
 class NotiPopover(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -72,6 +74,9 @@ class LayoutWindow(QMainWindow):
         # UserPopover 생성 및 시그널 연결
         self.user_popover = UserPopover(self)
         self.user_popover.logoutBtn.clicked.connect(self.handle_logout2)
+
+        self.cctv_widget = CCTVWidget(self)
+        self.cctv_widget.show_at(QPoint(190, 50))  # 초기 위치 설정
 
     def handle_logout2(self):
         """로그아웃 처리"""

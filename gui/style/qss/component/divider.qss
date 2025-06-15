@@ -17,3 +17,10 @@
 .divider.hor.dashed {
     border-right: 1px dashed #666;
 }
+
+#verLine {
+    background-color: #999;
+}
+#horLine {
+    background-color: #999;
+}

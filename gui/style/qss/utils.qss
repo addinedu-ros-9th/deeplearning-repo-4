@@ -5,6 +5,10 @@
     background: none;
     border: none;
 }
+#MainWindow {
+    border: 1px solid #ccc;
+    padding: 1px;
+}
 .QStatusBar {
     width: 0;
     height: 0;

@@ -13,8 +13,8 @@ class MainApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Gigachad")
-        self.setGeometry(100, 100, 1440, 900)
-
+        self.setGeometry(0, 0, 1440, 900)
+    
         # QStackedWidget 생성
         self.central_widget = QStackedWidget()
         self.setCentralWidget(self.central_widget)

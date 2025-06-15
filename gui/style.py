@@ -21,7 +21,9 @@ def apply_style(app):
                  "component/btn.qss",
                  "component/checkbox.qss",
                  "component/divider.qss",
-                 "component/textfield.qss"]
+                 "component/textfield.qss",
+                 "component/select.qss",
+                 "contents/cctv.qss"]
     style = ""
     for file in qss_files:
         with open(f'{qss_path}{file}', "r") as f:
