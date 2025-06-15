@@ -1,6 +1,5 @@
 #login_bg {
     background: url("./style/images/login-bg.png") no-repeat center center;
-    background-size: contain;
 }
 
 #login_logo {

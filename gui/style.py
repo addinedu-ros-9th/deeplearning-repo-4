@@ -8,6 +8,7 @@ colors = {
     "therity" : "#F98CAB",
     "fourth" : "#F2CD3B",
     "fourth_dark" : "#D7B017",
+    "error" : "#F44336",
 }
 
 radius = "2px"

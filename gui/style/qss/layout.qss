@@ -22,17 +22,14 @@
 }
 #menuBtn1Icon {
     background: url("./style/images/ico-cctv.png") no-repeat center center;
-    background-size: contain;
 }
 
 #menuBtn2Icon {
     background: url("./style/images/ico-dashboard.png") no-repeat center center;
-    background-size: contain;
 }
 
 #menuBtn3Icon {
     background: url("./style/images/ico-log.png") no-repeat center center;
-    background-size: contain;
 }
 
 .menuBtn1:hover,
@@ -82,18 +79,6 @@
     background-color: white;
     border-radius: 2px;
     border: 1px solid #ccc;
-}
-
-#userId {
-    font-weight: 700;
-    font-size: 14px;
-    color: #666;
-}
-
-#userEmail {
-    font-weight: 300;
-    font-size: 12px;
-    color: #666;
 }
 
 #logoutBtn {

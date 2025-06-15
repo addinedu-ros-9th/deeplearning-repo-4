@@ -5,7 +5,12 @@
     background: none;
     border: none;
 }
-
+.QStatusBar {
+    width: 0;
+    height: 0;
+    min-height: 0;
+    max-height: 0;
+}
 /* bg */
 .bg.gray6 { background-color: #666; }
 .bg.gray9 { background-color: #999; }

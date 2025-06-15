@@ -39,7 +39,6 @@
     <property name="font">
      <font>
       <family>Inter 18pt</family>
-      <weight>50</weight>
       <bold>false</bold>
      </font>
     </property>
@@ -59,7 +58,6 @@
     <property name="font">
      <font>
       <family>Inter 18pt</family>
-      <weight>75</weight>
       <bold>true</bold>
      </font>
     </property>
@@ -192,6 +190,9 @@
     <property name="placeholderText">
      <string>Password</string>
     </property>
+    <property name="clearButtonEnabled">
+     <bool>false</bool>
+    </property>
    </widget>
    <widget class="QPushButton" name="login_btn">
     <property name="geometry">
@@ -205,7 +206,6 @@
     <property name="font">
      <font>
       <family>Inter 18pt</family>
-      <weight>50</weight>
       <bold>false</bold>
      </font>
     </property>
@@ -251,7 +251,7 @@
      <x>0</x>
      <y>0</y>
      <width>1440</width>
-     <height>24</height>
+     <height>23</height>
     </rect>
    </property>
   </widget>

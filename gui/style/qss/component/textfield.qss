@@ -12,3 +12,7 @@
     outline: none;
     border: 1px solid {{primary}}; /* 더 진한 색상과 두께 */
 }
+
+.textfield.error {
+    border: 1px solid {{error}}; /* 에러 색상 */
+}
