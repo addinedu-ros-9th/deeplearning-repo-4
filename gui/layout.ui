@@ -158,7 +158,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>User01</string>
+     <string>test</string>
     </property>
    </widget>
    <widget class="QLabel" name="verLine">

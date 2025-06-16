@@ -6,10 +6,11 @@ from PyQt6 import *
 from PyQt6.QtGui import *
 from PyQt6.QtCore import *
 from PyQt6.QtWidgets import *
+from user_info import user_table
 
 class LoginWindow(QMainWindow):
     # 로그인 성공 시그널 정의
-    login_successful = pyqtSignal()
+    login_successful = pyqtSignal(dict)
 
     def __init__(self):
         super().__init__()
@@ -59,12 +60,18 @@ class LoginWindow(QMainWindow):
         id_input = self.login_textfield1.text()
         pw_input = self.login_textfield2.text()
 
+        user_exists = any(user['user_id'] == id_input for user in user_table)
+        user_info = next((user for user in user_table if user['user_id'] == id_input), None)
+
         print(f"User input: {id_input}")
-        if id_input == "user01":
-            if pw_input == "user01":
+        if user_exists:
+            if pw_input ==  user_info['password']:
+                if not self.login_checkbox.isChecked():
+                    self.login_textfield1.clear()
+                    self.login_textfield2.clear()
                 # 로그인 성공 처리
                 print("Login successful!")
-                self.login_successful.emit()
+                self.login_successful.emit(user_info)
             else : 
                 print("Invalid password.")
                 self.login_textfield2.setProperty("class", "textfield large error")

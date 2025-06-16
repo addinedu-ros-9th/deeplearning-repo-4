@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import *
 
 from cctv import CCTVWidget
 
+
 class NotiPopover(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -33,6 +34,8 @@ class UserPopover(QWidget):
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Popup)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
+        self.user_info = None 
+
         self.logoutBtn.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.logoutBtn.clicked.connect(self.close)
         self.userId.setProperty("class", "weight700 size14 color-gray6")
@@ -42,6 +45,11 @@ class UserPopover(QWidget):
         """특정 위치에 팝오버 표시"""
         self.move(pos)
         self.show()
+
+    def set_user_info(self, user_info):
+        self.user_info = user_info
+        self.userId.setText(user_info['name'])
+        self.userEmail.setText(user_info['email'])
 
 class LayoutWindow(QMainWindow):
     logout_successful = pyqtSignal()
@@ -55,6 +63,7 @@ class LayoutWindow(QMainWindow):
         self.locTitle.setText("CCTV")
         self.locDepth1.setText("전체 매장")
         self.userBtn.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+        # self.userBtn.setText(super().user_id)
 
         # 클래스 지정      
         self.menuBtn1.setProperty("class", "menuBtn1 active")
@@ -77,6 +86,11 @@ class LayoutWindow(QMainWindow):
 
         self.cctv_widget = CCTVWidget(self)
         self.cctv_widget.show_at(QPoint(190, 50))  # 초기 위치 설정
+
+    def set_user_info(self, user_info):
+        self.user_info = user_info
+        self.userBtn.setText(user_info['user_id'])
+        self.user_popover.set_user_info(user_info)
 
     def handle_logout2(self):
         """로그아웃 처리"""
