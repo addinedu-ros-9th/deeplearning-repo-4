@@ -4,7 +4,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset
-from utils.keypoint_utils import KEYPOINT_ORDER, NUM_KEYPOINTS, LABELS, get_class_weights
+from utils.config import KEYPOINT_ORDER, NUM_KEYPOINTS
+from utils.keypoint_utils import LABELS, get_class_weights
 from sklearn.metrics import f1_score
 from tqdm import tqdm
 import random

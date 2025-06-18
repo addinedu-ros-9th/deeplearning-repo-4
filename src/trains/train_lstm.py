@@ -1,4 +1,5 @@
 from utils.keypoint_utils import LABELS, NUM_CLASSES, INV_LABELS, get_class_weights
+from utils.config import KEYPOINT_ORDER, NUM_KEYPOINTS
 from modules.lstm import KeypointSequenceDataset, AdvancedLSTMClassifier, process_features, evaluate
 import torch
 from torch.utils.data import DataLoader

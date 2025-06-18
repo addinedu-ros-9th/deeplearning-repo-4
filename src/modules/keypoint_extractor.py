@@ -1,7 +1,7 @@
 # 키포인트 추출 모듈
 
 import numpy as np
-from utils.keypoint_utils import KEYPOINT_ORDER, NUM_KEYPOINTS
+from utils.config import KEYPOINT_ORDER, NUM_KEYPOINTS
 
 def extract_keypoints_all(kp_tracks):
     frame_dict = {}

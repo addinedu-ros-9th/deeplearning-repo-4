@@ -1,17 +1,8 @@
-# 키포인트 관련 유틸리티 함수
-
 import xml.etree.ElementTree as ET
 import numpy as np
 import torch
 from sklearn.utils.class_weight import compute_class_weight
-
-KEYPOINT_ORDER = [
-    'Pelvis', 'Left hip', 'Left knee', 'Left foot',
-    'Right  hip', 'Right knee', 'Right foot',
-    'Spine naval', 'Spine chest', 'Neck base', 'Center head',
-    'Right shoulder', 'Right elbow', 'Right hand',
-    'Left shoulder', 'Left elbow', 'Left hand'
-]
+from utils.config import KEYPOINT_ORDER, ACTIONS, SPLITS, NUM_KEYPOINTS
 
 ACTION_LABELS = {
     'normal': 0,
@@ -19,10 +10,6 @@ ACTION_LABELS = {
     'broken': 2,
     'abandon': 3
 }
-
-ACTIONS = ['abandon', 'broken', 'theft', 'normal']
-SPLITS = ['train', 'val']
-NUM_KEYPOINTS = 17
 
 LABELS = ACTION_LABELS
 NUM_CLASSES = len(LABELS)

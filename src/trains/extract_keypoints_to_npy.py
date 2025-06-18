@@ -2,6 +2,7 @@ import os
 import glob
 import numpy as np
 from tqdm import tqdm
+from utils.config import KEYPOINT_ORDER, NUM_KEYPOINTS
 from utils.keypoint_utils import ACTIONS, SPLITS, parse_xml_keypoints, get_action_frames, NUM_KEYPOINTS
 from modules.keypoint_extractor import extract_keypoints_all
 
