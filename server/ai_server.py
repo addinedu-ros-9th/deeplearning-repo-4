@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 
 # UDP 수신
-UDP_IP = "127.0.0.1"
+UDP_IP = "0.0.0.0"
 UDP_PORT = 5005
 udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 udp_sock.bind((UDP_IP, UDP_PORT))
