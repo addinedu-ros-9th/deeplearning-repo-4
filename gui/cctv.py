@@ -8,6 +8,7 @@ from PyQt6.QtCore import *
 from PyQt6.QtWidgets import *
 import cv2
 import socket
+import numpy as np
 
 class CCTVWidget(QWidget):
     def __init__(self, parent=None):
@@ -22,6 +23,7 @@ class CCTVWidget(QWidget):
         # 네트워크 연결 설정
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect(('192.168.0.21', 7007))
+        self.sock.settimeout(0.1)
 
         
         # 프레임 설정
@@ -58,6 +60,8 @@ class CCTVWidget(QWidget):
                 self.cctv_box.setPixmap(scaled_pixmap)
             else:
                 print("프레임 디코딩 실패")
+        except socket.timeout:
+            pass
         except Exception as e:
             print("프레임 수신 중 오류:", e)
 
