@@ -4,7 +4,7 @@ import pickle
 import cv2
 import numpy as np
 
-CENTRAL_IP = "127.0.0.1"
+CENTRAL_IP = "192.168.0.21"
 CENTRAL_PORT = 7007
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
