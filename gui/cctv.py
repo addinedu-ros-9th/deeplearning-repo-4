@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import *
 import cv2
 import socket
 import numpy as np
+import struct
 
 class CCTVWidget(QWidget):
     def __init__(self, parent=None):
@@ -37,14 +38,32 @@ class CCTVWidget(QWidget):
         self.timer.start(int(1000 / frame)) 
 
 
+    def recv_full(self, size):
+        data = b''
+        while len(data) < size:
+            packet = self.sock.recv(size - len(data))
+            if not packet:
+                return None
+            data += packet
+        return data
+
     def update_frame(self):
         """네트워크로 받은 프레임을 cctv_box에 표시"""
         try:
-            data = self.sock.recv(65536)
-            if not data:
-                print("서버로부터 데이터 수신 실패")
+            # 1. 4바이트 길이 먼저 받기
+            length_bytes = self.recv_full(4)
+            if not length_bytes:
+                print("서버로부터 길이 수신 실패")
                 return
-            nparr = np.frombuffer(data, np.uint8)
+            frame_len = struct.unpack('!I', length_bytes)[0]
+
+            # 2. 프레임 데이터 받기
+            frame_bytes = self.recv_full(frame_len)
+            if not frame_bytes:
+                print("서버로부터 프레임 데이터 수신 실패")
+                return
+
+            nparr = np.frombuffer(frame_bytes, np.uint8)
             frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
             if frame is not None:
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
