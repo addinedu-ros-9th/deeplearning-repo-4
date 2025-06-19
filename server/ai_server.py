@@ -76,7 +76,8 @@ while True:
             
             if complete_frame_data:
                 print(f"[AI서버] 프레임 {frame_id} 완성, 크기: {len(complete_frame_data)} bytes")
-                tcp_sock.sendall(complete_frame_data)
+                # 프레임 길이(4바이트) + 프레임 데이터 전송
+                tcp_sock.sendall(struct.pack('!I', len(complete_frame_data)) + complete_frame_data)
                 print(f"[AI서버] TCP로 전송: {len(complete_frame_data)} bytes")
                 
                 # JPEG 바이너리를 numpy array로 변환 후 디코딩
