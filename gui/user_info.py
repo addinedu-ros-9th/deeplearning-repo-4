@@ -18,6 +18,6 @@ try:
         cursor.execute(sql)
         columns = [desc[0] for desc in cursor.description]  # 컬럼명 추출
         user_table = [dict(zip(columns, row)) for row in cursor.fetchall()]
-        print(user_table)
+        # print(user_table)
 finally:
     conn.close()
