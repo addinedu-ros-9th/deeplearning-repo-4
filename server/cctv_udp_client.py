@@ -5,7 +5,8 @@ import time
 import struct
 import numpy as np
 
-UDP_IP = "192.168.0.21"
+UDP_IP = "192.168.0.21" # 채연 pc
+# UDP_IP = "192.168.0.15" # 원호 pc 
 UDP_PORT = 5005
 MAX_PACKET_SIZE = 60000  # UDP 패킷 크기 제한
 
