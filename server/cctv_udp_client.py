@@ -2,9 +2,11 @@
 import cv2
 import socket
 import time
+import struct
 
 UDP_IP = "192.168.0.21"
 UDP_PORT = 5005
+MAX_PACKET_SIZE = 60000  # UDP 패킷 크기 제한
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 cap = cv2.VideoCapture(0)
@@ -26,6 +28,24 @@ print(f"프레임 크기: {width}x{height}")
 fps = 5
 frame_interval = 1.0 / fps
 last_frame_time = time.time()
+frame_id = 0
+
+def send_frame_in_packets(frame_data, frame_id):
+    """프레임을 여러 패킷으로 분할하여 전송"""
+    total_size = len(frame_data)
+    num_packets = (total_size + MAX_PACKET_SIZE - 1) // MAX_PACKET_SIZE
+    
+    for packet_idx in range(num_packets):
+        start_idx = packet_idx * MAX_PACKET_SIZE
+        end_idx = min(start_idx + MAX_PACKET_SIZE, total_size)
+        packet_data = frame_data[start_idx:end_idx]
+        
+        # 패킷 헤더: [frame_id(4bytes), packet_idx(4bytes), num_packets(4bytes), data_size(4bytes)]
+        header = struct.pack('!IIII', frame_id, packet_idx, num_packets, len(packet_data))
+        packet = header + packet_data
+        
+        sock.sendto(packet, (UDP_IP, UDP_PORT))
+        print(f"[CCTV] 프레임 {frame_id}, 패킷 {packet_idx+1}/{num_packets}, 크기: {len(packet_data)} bytes")
 
 while True:
     current_time = time.time()
@@ -39,13 +59,9 @@ while True:
         result, imgencode = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
         data = imgencode.tobytes()
         
-        # UDP 패킷 크기 제한 확인
-        if len(data) > 65000:
-            print("프레임이 너무 큽니다. JPEG 품질을 낮추세요.")
-            continue
-            
-        print(f"[CCTV] 전송 프레임 크기: {len(data)} bytes")
-        sock.sendto(data, (UDP_IP, UDP_PORT))
+        # 프레임을 여러 패킷으로 분할하여 전송
+        send_frame_in_packets(data, frame_id)
+        frame_id += 1
         last_frame_time = current_time
 
 cap.release()
