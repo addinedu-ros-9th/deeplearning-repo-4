@@ -3,6 +3,7 @@ import cv2
 import socket
 import time
 import struct
+import numpy as np
 
 UDP_IP = "192.168.0.21"
 UDP_PORT = 5005
@@ -46,6 +47,44 @@ def send_frame_in_packets(frame_data, frame_id):
         
         sock.sendto(packet, (UDP_IP, UDP_PORT))
         print(f"[CCTV] 프레임 {frame_id}, 패킷 {packet_idx+1}/{num_packets}, 크기: {len(packet_data)} bytes")
+
+def recv_full(sock, size):
+    data = b''
+    while len(data) < size:
+        packet = sock.recv(size - len(data))
+        if not packet:
+            return None
+        data += packet
+    return data
+
+def handle_ai(ai_conn, gui_conn):
+    print("[Central] AI 서버 핸들러 시작")
+    while True:
+        # 1. 프레임 길이(4바이트) 먼저 받기
+        length_bytes = recv_full(ai_conn, 4)
+        if not length_bytes:
+            print("[Central] AI 서버 연결 종료")
+            break
+        frame_len = struct.unpack('!I', length_bytes)[0]
+
+        # 2. 프레임 데이터 받기
+        frame_bytes = recv_full(ai_conn, frame_len)
+        if not frame_bytes:
+            print("[Central] 프레임 데이터 수신 실패")
+            break
+
+        print(f"[Central] AI서버에서 수신: {frame_len} bytes")
+
+        # 프레임 디코딩 테스트
+        nparr = np.frombuffer(frame_bytes, np.uint8)
+        frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        if frame is None:
+            print("[Central] 프레임 디코딩 실패")
+            continue
+
+        # GUI로도 같은 방식으로 전송
+        gui_conn.sendall(struct.pack('!I', frame_len) + frame_bytes)
+        print(f"[Central] GUI로 전송: {frame_len} bytes")
 
 while True:
     current_time = time.time()

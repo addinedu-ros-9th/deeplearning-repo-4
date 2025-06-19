@@ -3,36 +3,50 @@ import socket
 import threading
 import cv2
 import numpy as np
+import struct
 
 # AI 서버로부터 수신
 AI_PORT = 6006
 # GUI와 통신
 GUI_PORT = 7007
 
+def recv_full(sock, size):
+    data = b''
+    while len(data) < size:
+        packet = sock.recv(size - len(data))
+        if not packet:
+            return None
+        data += packet
+    return data
+
 def handle_ai(ai_conn, gui_conn):
     print("[Central] AI 서버 핸들러 시작")
     while True:
         try:
-            # 프레임 데이터 수신
-            data = ai_conn.recv(65536)
-            if not data:
-                print("[Central] AI 서버 연결 종료")
+            # 1. 4바이트 길이 먼저 받기
+            length_bytes = recv_full(ai_conn, 4)
+            if not length_bytes:
                 break
-            
-            frame_size = len(data)
-            print(f"[Central] AI서버에서 수신: {frame_size} bytes")
+            frame_len = struct.unpack('!I', length_bytes)[0]
+
+            # 2. 프레임 데이터 받기
+            frame_bytes = recv_full(ai_conn, frame_len)
+            if not frame_bytes:
+                break
+
+            print(f"[Central] AI서버에서 수신: {frame_len} bytes")
             
             try:
                 # 프레임 디코딩 테스트 (데이터 무결성 확인)
-                nparr = np.frombuffer(data, np.uint8)
+                nparr = np.frombuffer(frame_bytes, np.uint8)
                 frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
                 if frame is None:
                     print("[Central] 프레임 디코딩 실패")
                     continue
                 
                 # GUI로 데이터 전달
-                gui_conn.sendall(data)
-                print(f"[Central] GUI로 전송: {frame_size} bytes")
+                gui_conn.sendall(struct.pack('!I', frame_len) + frame_bytes)
+                print(f"[Central] GUI로 전송: {frame_len} bytes")
             except Exception as e:
                 print(f"[Central] 프레임 처리 중 오류: {e}")
                 
