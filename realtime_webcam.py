@@ -196,5 +196,5 @@ def realtime_anomaly_detection(model_path="transfer_learned_model.pth",
         print("Webcam released")
 
 if __name__ == "__main__":
-    model_path = "transfer_learned_model.pth"
+    model_path = "/home/ckim/dev_ws/project_ws/deeplearning-repo-4/saved_models/추가학습패딩없이(최고).pth"
     realtime_anomaly_detection(model_path=model_path) 

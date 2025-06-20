@@ -23,7 +23,8 @@ class CCTVWidget(QWidget):
 
         # 네트워크 연결 설정
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.connect(('192.168.0.15', 7007))
+        # self.sock.connect(('192.168.0.15', 7007))
+        self.sock.connect(('192.168.0.21', 7007))
         self.sock.settimeout(0.1)
         # self.cap = cv2.VideoCapture(0) # 웹캠
         # self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 860)  # 해상도 너비 설정
