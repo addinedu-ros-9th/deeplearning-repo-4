@@ -6,7 +6,7 @@ from PyQt6 import *
 from PyQt6.QtGui import *
 from PyQt6.QtCore import *
 from PyQt6.QtWidgets import *
-from user_info import user_table
+from modules.user_info import user_table
 
 class LoginWindow(QMainWindow):
     # 로그인 성공 시그널 정의

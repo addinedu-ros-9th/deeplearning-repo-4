@@ -26,7 +26,7 @@ last_frame_time = time.time()
 # 프레임 재조립을 위한 버퍼
 frame_buffers = {}  # {frame_id: {packet_idx: data, ...}}
 
-print(f"[AI서버] 1920x1080 해상도, {fps}fps로 수신 대기 중...")
+print(f"[AI서버] 860x645 해상도, {fps}fps로 수신 대기 중...")
 
 def reassemble_frame(frame_id, packets_info):
     """패킷들을 재조립하여 완전한 프레임 생성"""
@@ -85,9 +85,9 @@ while True:
                 frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
                 
                 if frame is not None:
-                    # 1920x1080 해상도에 맞는 윈도우 크기로 조정
+                    # 860x645 해상도에 맞는 윈도우 크기로 조정
                     cv2.namedWindow("Received Frame", cv2.WINDOW_NORMAL)
-                    cv2.resizeWindow("Received Frame", 1280, 720)  # 화면에 맞게 크기 조정
+                    cv2.resizeWindow("Received Frame", 860, 645)  # 화면에 맞게 크기 조정
                     cv2.imshow("Received Frame", frame)
                     last_frame_time = current_time
             
