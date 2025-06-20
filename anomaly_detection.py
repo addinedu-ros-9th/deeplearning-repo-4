@@ -119,7 +119,7 @@ class VideoDataset(Dataset):
         return len(self.video_paths)
 
 class AnomalyDetector(nn.Module):
-    def __init__(self, input_size=17*4, hidden_size=256, num_layers=2, num_classes=4):
+    def __init__(self, input_size=17*4, hidden_size=512, num_layers=3, num_classes=4):
         super(AnomalyDetector, self).__init__()
         self.lstm = nn.LSTM(
             input_size=input_size,
@@ -129,13 +129,13 @@ class AnomalyDetector(nn.Module):
             bidirectional=True
         )
         self.classifier = nn.Sequential(
-            nn.Linear(hidden_size * 2, 512),
+            nn.Linear(hidden_size * 2, 1024),
             nn.ReLU(),
             nn.Dropout(0.5),
-            nn.Linear(512, 128),
+            nn.Linear(1024, 256),
             nn.ReLU(),
             nn.Dropout(0.5),
-            nn.Linear(128, num_classes)
+            nn.Linear(256, num_classes)
         )
     
     def forward(self, x):
