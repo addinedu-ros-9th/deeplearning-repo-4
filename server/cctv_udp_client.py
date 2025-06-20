@@ -15,8 +15,8 @@ cap = cv2.VideoCapture(0)
 
 # record.py와 동일한 카메라 설정
 cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))  # MJPEG 포맷 강제
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 860)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 645)
 
 if not cap.isOpened():
     print("웹캠을 열 수 없습니다.")
@@ -87,6 +87,12 @@ def handle_ai(ai_conn, gui_conn):
         gui_conn.sendall(struct.pack('!I', frame_len) + frame_bytes)
         print(f"[Central] GUI로 전송: {frame_len} bytes")
 
+def crop_center(img, cropx, cropy):
+    y, x, _ = img.shape
+    startx = x//2 - cropx//2
+    starty = y//2 - cropy//2
+    return img[starty:starty+cropy, startx:startx+cropx]
+
 while True:
     current_time = time.time()
     if current_time - last_frame_time >= frame_interval:
@@ -95,6 +101,8 @@ while True:
             print("프레임을 읽을 수 없습니다.")
             break
         
+        frame = crop_center(frame, 720, 540)
+
         # 프레임을 JPEG로 인코딩 (원본 해상도 유지)
         result, imgencode = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
         data = imgencode.tobytes()
