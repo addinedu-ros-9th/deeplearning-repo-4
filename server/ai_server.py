@@ -1,3 +1,9 @@
+import sys
+import os
+# 이 파일(ai_server.py)의 부모 폴더(server)의 부모 폴더(deeplearning-repo-4)를 경로에 추가
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, project_root)
+
 import torch
 import cv2
 import numpy as np
@@ -7,7 +13,6 @@ import torch.nn.functional as F
 from collections import deque, Counter
 import time
 import datetime
-import os
 import socket
 import struct
 
