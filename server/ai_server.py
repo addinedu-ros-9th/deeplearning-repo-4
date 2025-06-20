@@ -47,29 +47,28 @@ sequence_length = 15
 joints_sequence = deque(maxlen=sequence_length)
 label_names = ["Normal", "Theft", "Abandon", "Broken"]
 pred_buffer = deque(maxlen=7) # 7프레임 동안의 예측을 저장하여 안정성 확보
+prev_prediction = None # 이전 프레임의 예측값 저장
 last_stable_prediction = 0 # 가장 마지막의 안정된 예측 (기본값: Normal)
 last_probs = None # 마지막 확률 값 저장
 
 
 def extract_joints(frame, pose_model):
-    """프레임에서 관절점 추출"""
+    """프레임에서 관절점 추출 (realtime_webcam.py 방식과 동일하게 수정)"""
     try:
-        # 모델 학습 시 정규화 방식과 동일하게 256x256 기준으로 정규화
-        results = pose_model(cv2.resize(frame, (256, 256)), verbose=False)[0]
+        # 원본 해상도 프레임을 그대로 모델에 입력
+        results = pose_model(frame, verbose=False)[0]
         if results.keypoints is not None and len(results.keypoints) > 0:
+            # 원본 프레임에서 추출된 keypoints
             keypoints = results.keypoints[0].data[0].cpu().numpy()
             
-            # 원본 프레임 비율에 맞게 keypoints 좌표 복원
-            orig_h, orig_w = frame.shape[:2]
-            keypoints_orig = np.copy(keypoints)
-            keypoints_orig[:, 0] = keypoints[:, 0] * (orig_w / 256.0)
-            keypoints_orig[:, 1] = keypoints[:, 1] * (orig_h / 256.0)
-
+            # anomaly_detection 모델 입력을 위한 정규화 (256으로 나눔)
             joints = np.zeros(17 * 4)
             for i, kp in enumerate(keypoints):
                 if i < 17:
-                    joints[i*4:(i+1)*4] = [kp[0]/256, kp[1]/256, 0.0, kp[2]]
-            return joints, keypoints_orig
+                    # realtime_webcam.py와 동일한 정규화 방식 적용
+                    joints[i*4:(i+1)*4] = [kp[0]/256.0, kp[1]/256.0, 0.0, kp[2]]
+            # 시각화를 위해서는 원본 좌표 keypoints 사용
+            return joints, keypoints
         return np.zeros(17 * 4), None
     except Exception as e:
         print(f"[AI 서버] 관절점 추출 오류: {e}")
@@ -202,24 +201,29 @@ while True:
                             logits = anomaly_model(input_tensor)
                             probs = F.softmax(logits[:, -1, :], dim=-1).cpu().numpy()[0]
                         
-                        last_probs = probs # 확률 저장
+                        last_probs = probs # 시각화를 위해 확률 저장
                         current_prediction = np.argmax(probs)
+
+                        # 예측 안정화 로직 (realtime_webcam.py와 동일하게)
+                        if prev_prediction is not None and current_prediction != prev_prediction:
+                            pred_buffer.clear()
+                        
                         pred_buffer.append(current_prediction)
+                        prev_prediction = current_prediction
                 else:
-                    # 사람이 탐지되지 않으면 버퍼를 초기화하고 Normal로 간주
-                    pred_buffer.clear()
-                    pred_buffer.append(0) 
+                    # 사람이 없으면 아무것도 안함 (버퍼 유지)
+                    prev_prediction = None # 사람이 사라졌으므로 이전 예측 리셋
 
                 # 3. 안정적인 예측 결정 (민감도 조절)
-                # 버퍼가 가득 차고, 모든 예측이 동일하며, Normal이 아닐 때만 안정적인 예측으로 간주
+                final_prediction = last_stable_prediction
+                # 버퍼가 가득 차고, 모든 예측이 동일할 때만 안정적인 예측으로 간주
                 if len(pred_buffer) == 7 and len(set(pred_buffer)) == 1:
-                    last_stable_prediction = pred_buffer[0]
+                    final_prediction = pred_buffer[0]
+                    last_stable_prediction = final_prediction # 안정된 예측 업데이트
                 
                 # 4. 결과 시각화
-                # 키포인트 먼저 그리기
                 processed_frame = draw_keypoints(frame.copy(), keypoints)
-                # 그 위에 예측 결과 텍스트 표시
-                processed_frame = draw_predictions(processed_frame, last_probs, last_stable_prediction)
+                processed_frame = draw_predictions(processed_frame, last_probs, final_prediction)
                 
                 # 5. 처리된 프레임을 중앙 서버로 전송
                 ret, buffer = cv2.imencode('.jpg', processed_frame, [cv2.IMWRITE_JPEG_QUALITY, 90])
