@@ -8,7 +8,8 @@ from PyQt6.QtCore import *
 from PyQt6.QtWidgets import *
 
 from cctv import CCTVWidget
-
+from dashboard import DashboardWidget
+from detect_log import DetectLogWidget
 
 class NotiPopover(QWidget):
     def __init__(self, parent=None):
@@ -69,6 +70,9 @@ class LayoutWindow(QMainWindow):
         self.menuBtn1.setProperty("class", "menuBtn1 active")
         self.menuBtn2.setProperty("class", "menuBtn2")
         self.menuBtn3.setProperty("class", "menuBtn3")
+        self.menuBtn1.clicked.connect(self.clickMenu1)
+        self.menuBtn2.clicked.connect(self.clickMenu2)
+        self.menuBtn3.clicked.connect(self.clickMenu3)
         self.verLine.setProperty("class", "bg grayc")
         self.horLine.setProperty("class", "bg grayc")
         self.locTitle.setProperty("class", "weight700 size16 color-gray9")
@@ -85,7 +89,55 @@ class LayoutWindow(QMainWindow):
         self.user_popover.logoutBtn.clicked.connect(self.handle_logout2)
 
         self.cctv_widget = CCTVWidget(self)
+        self.dashboard_widget = DashboardWidget(self)
+        self.detect_log_widget = DetectLogWidget(self)
         self.cctv_widget.show_at(QPoint(190, 50))  # 초기 위치 설정
+        self.dashboard_widget.show_at(QPoint(190, 50))
+        self.detect_log_widget.show_at(QPoint(190, 50))
+        self.dashboard_widget.hide()
+        self.detect_log_widget.hide()
+
+    def clickMenu1(self):
+        self.menuBtn1.setProperty("class", "menuBtn1 active")
+        self.menuBtn2.setProperty("class", "menuBtn2")
+        self.menuBtn3.setProperty("class", "menuBtn3")
+        self.menuBtn1.style().unpolish(self.menuBtn1)   
+        self.menuBtn1.style().polish(self.menuBtn1)
+        self.menuBtn2.style().unpolish(self.menuBtn2)   
+        self.menuBtn2.style().polish(self.menuBtn2)
+        self.menuBtn3.style().unpolish(self.menuBtn3)   
+        self.menuBtn3.style().polish(self.menuBtn3)
+        self.cctv_widget.show()
+        self.dashboard_widget.hide()
+        self.detect_log_widget.hide()
+    
+    def clickMenu2(self):
+        self.menuBtn1.setProperty("class", "menuBtn1")
+        self.menuBtn2.setProperty("class", "menuBtn2 active")
+        self.menuBtn3.setProperty("class", "menuBtn3")
+        self.menuBtn1.style().unpolish(self.menuBtn1)   
+        self.menuBtn1.style().polish(self.menuBtn1)
+        self.menuBtn2.style().unpolish(self.menuBtn2)   
+        self.menuBtn2.style().polish(self.menuBtn2)
+        self.menuBtn3.style().unpolish(self.menuBtn3)   
+        self.menuBtn3.style().polish(self.menuBtn3)
+        self.cctv_widget.hide()
+        self.dashboard_widget.show()
+        self.detect_log_widget.hide()
+    
+    def clickMenu3(self):
+        self.menuBtn1.setProperty("class", "menuBtn1")
+        self.menuBtn2.setProperty("class", "menuBtn2")
+        self.menuBtn3.setProperty("class", "menuBtn3 active")
+        self.menuBtn1.style().unpolish(self.menuBtn1)   
+        self.menuBtn1.style().polish(self.menuBtn1)
+        self.menuBtn2.style().unpolish(self.menuBtn2)   
+        self.menuBtn2.style().polish(self.menuBtn2)
+        self.menuBtn3.style().unpolish(self.menuBtn3)   
+        self.menuBtn3.style().polish(self.menuBtn3)
+        self.cctv_widget.hide()
+        self.dashboard_widget.hide()
+        self.detect_log_widget.show()
 
     def set_user_info(self, user_info):
         self.user_info = user_info
@@ -114,9 +166,10 @@ class LayoutWindow(QMainWindow):
     #     """로그아웃 처리"""
     #     self.parent().show_login_window()  # MainApp의 화면 전환 메서드 호출
 
-# if __name__ == "__main__":
-#     app = QApplication(sys.argv)
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
 
-#     main = Layout()
-#     main.show()
-#     sys.exit(app.exec())
+    layout_window = LayoutWindow()
+    layout_window.show()
+
+    sys.exit(app.exec())

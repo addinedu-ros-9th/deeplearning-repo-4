@@ -23,8 +23,8 @@ class CCTVWidget(QWidget):
 
         # 네트워크 연결 설정
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # self.sock.connect(('192.168.0.15', 7007))
-        self.sock.connect(('192.168.0.21', 7007))
+        self.sock.connect(('192.168.0.15', 7007))
+        # self.sock.connect(('192.168.0.21', 7007))
         self.sock.settimeout(0.1)
         # self.cap = cv2.VideoCapture(0) # 웹캠
         # self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 860)  # 해상도 너비 설정
@@ -36,8 +36,17 @@ class CCTVWidget(QWidget):
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_frame)
-        self.timer.start(int(1000 / frame)) 
+        # self.timer.start(int(1000 / frame)) 
 
+    def showEvent(self, event):
+        # 화면에 보일 때만 타이머 시작
+        self.timer.start(int(1000 / 10))  # 프레임 수에 맞게 조정
+        super().showEvent(event)
+
+    def hideEvent(self, event):
+        # 화면에서 사라질 때 타이머 정지
+        self.timer.stop()
+        super().hideEvent(event)
 
     def recv_full(self, size):
         data = b''
@@ -113,3 +122,9 @@ class CCTVWidget(QWidget):
         """특정 위치에 팝오버 표시"""
         self.move(pos)
         self.show()
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    cctv_widget = CCTVWidget()
+    cctv_widget.show()
+    sys.exit(app.exec())
