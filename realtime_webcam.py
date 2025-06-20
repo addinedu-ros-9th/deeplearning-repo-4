@@ -57,7 +57,7 @@ def draw_predictions(frame, probs, current_prediction, fps=None):
                         (20, y_offset + i * 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
     return frame
 
-def realtime_anomaly_detection(model_path="transfer_learned_model.pth", 
+def realtime_anomaly_detection(model_path="saved_models/추가학습패딩없이(최고).pth", 
                               pose_model_path='yolov8n-pose.pt',
                               sequence_length=15):
     """실시간 웹캠 이상 감지 (정확히 5fps, test_anormaly.py와 동일한 예측 방식)"""
@@ -75,7 +75,7 @@ def realtime_anomaly_detection(model_path="transfer_learned_model.pth",
     fps = 5
     frame_interval = 1.0 / fps
     last_frame_time = time.time()
-    video_buffer = deque(maxlen=45)
+    video_buffer = deque(maxlen=45)  # 9초 전까지의 프레임 저장 (5fps * 9초)
     pred_buffer = deque(maxlen=7)
     saving = False
     save_countdown = 0
@@ -85,6 +85,8 @@ def realtime_anomaly_detection(model_path="transfer_learned_model.pth",
     last_saved_action = None
     prev_prediction = None
     clip_predictions = []
+    pre_buffer_frames = []  # 이상 행위 시작 전 프레임들을 저장
+    pre_buffer_size = 15  # 3초 전까지 저장 (5fps * 3초)
     try:
         while True:
             current_time = time.time()
@@ -114,7 +116,14 @@ def realtime_anomaly_detection(model_path="transfer_learned_model.pth",
                     with torch.no_grad():
                         logits = model(input_tensor)
                         probs = F.softmax(logits[:, -1, :], dim=-1).cpu().numpy()[0]
-                    current_prediction = np.argmax(probs)
+                    
+                    # 신뢰도가 0.8 이상일 때만 해당 라벨로 예측, 그 이하는 Normal
+                    max_prob = np.max(probs)
+                    if max_prob >= 0.8:
+                        current_prediction = np.argmax(probs)
+                    else:
+                        current_prediction = 0  # Normal로 분류
+                    
                     frame = draw_predictions(frame, probs, current_prediction, None)
                     joints_sequence.popleft()
                 else:
@@ -126,6 +135,12 @@ def realtime_anomaly_detection(model_path="transfer_learned_model.pth",
                             (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
                 pass
             video_buffer.append(frame.copy())
+            
+            # 프레임을 미리 저장 (이상 행위 시작 전용)
+            pre_buffer_frames.append(frame.copy())
+            if len(pre_buffer_frames) > pre_buffer_size:
+                pre_buffer_frames.pop(0)  # 가장 오래된 프레임 제거
+            
             if current_prediction is not None:
                 if prev_prediction is not None and current_prediction != prev_prediction:
                     pred_buffer.clear()
@@ -150,6 +165,12 @@ def realtime_anomaly_detection(model_path="transfer_learned_model.pth",
                 height, width = frame.shape[:2]
                 out = cv2.VideoWriter(filename, fourcc, 5, (width, height))
                 print(f"Started saving clip: {filename}")
+                
+                # 미리 저장된 프레임들도 함께 저장 (이상 행위 시작 전)
+                for pre_frame in pre_buffer_frames:
+                    out.write(pre_frame)
+                    print(f"Added pre-buffer frame to {filename}")
+            
             if saving:
                 out.write(frame)
                 if current_prediction is not None:

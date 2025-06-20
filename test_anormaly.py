@@ -255,7 +255,7 @@ def print_results_summary(results):
         print(f"Max Anomaly Score: {result['max_score']:.4f}")
 
 if __name__ == "__main__":
-    model_path = "transfer_learned_model.pth"
+    model_path = "saved_models/노말변경3개.pth"
     model = load_model(model_path)
     pose_model = YOLO('yolov8n-pose.pt')
     test_dir = "/home/koo4802/Desktop/test_videos"
