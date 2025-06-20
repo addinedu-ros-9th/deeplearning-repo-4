@@ -221,9 +221,12 @@ def realtime_anomaly_detection(model_path="saved_models/추가학습패딩없이
                             cv2.putText(frame, f"Collecting data... ({remaining} frames left)", 
                                         (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
                     else:
+                        # 사람이 감지되지 않았을 때 시퀀스 초기화
+                        joints_sequence.clear()
+                        prev_prediction = None  # 이전 예측 리셋
                         cv2.putText(frame, "No person detected", 
                                     (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-                        pass
+                    
                     video_buffer.append(frame.copy())
                     
                     # 프레임을 미리 저장 (이상 행위 시작 전용)
