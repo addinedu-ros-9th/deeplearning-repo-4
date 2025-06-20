@@ -89,10 +89,8 @@ class LoginWindow(QMainWindow):
         self.login_textfield1.clearFocus()
         self.login_textfield2.clearFocus()
 
-# if __name__ == "__main__":
-#     app = QApplication(sys.argv)
-   
-
-#     main = LoginWindow()
-#     main.show()
-#     sys.exit(app.exec())
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    main = LoginWindow()
+    main.show()
+    sys.exit(app.exec())
