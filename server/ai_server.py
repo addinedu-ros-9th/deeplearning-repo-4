@@ -1,141 +1,72 @@
-# ai_server.py
-import socket
-import threading
+import torch
 import cv2
 import numpy as np
-import time
-import struct
-import torch
-from ultralytics import YOLO
-from collections import deque
-import torch.nn.functional as F
-import sys
-import os
-
-# ai_server.py가 있는 디렉토리의 부모 디렉토리를 경로에 추가
-# 이렇게 하면 deeplearning-repo-4 폴더를 기준으로 anomaly_detection 모듈을 찾을 수 있음
-current_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(current_dir)
-sys.path.append(parent_dir)
-
 from anomaly_detection import AnomalyDetector
+from ultralytics import YOLO
+import torch.nn.functional as F
+from collections import deque, Counter
+import time
+import datetime
+import os
+import socket
+import struct
 
-
-# --- 모델 및 디바이스 설정 ---
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-print(f"[AI 서버] 사용 디바이스: {device}")
 
-def load_anomaly_model(model_path):
-    """이상 행동 탐지 모델 로드"""
+def load_model(model_path):
+    """모델 로드 함수"""
     model = AnomalyDetector()
     model.load_state_dict(torch.load(model_path, map_location=device))
-    model.to(device)
+    model = model.to(device)
     model.eval()
     return model
 
-# 모델 경로 설정
-anomaly_model_path = "../saved_models/actual_anomaly_detector.pth"
-pose_model_path = 'yolov8n-pose.pt'
-
-print("[AI 서버] 모델 로딩 중...")
-anomaly_model = load_anomaly_model(anomaly_model_path)
-pose_model = YOLO(pose_model_path)
-print("[AI 서버] 모델 로딩 완료!")
-
-# --- 이상 행동 탐지 관련 설정 ---
-sequence_length = 15
-joints_sequence = deque(maxlen=sequence_length)
-label_names = ["Normal", "Theft", "Abandon", "Broken"]
-pred_buffer = deque(maxlen=7) # 7프레임 동안의 예측을 저장하여 안정성 확보
-prev_prediction = None # 이전 프레임의 예측값 저장
-last_stable_prediction = 0 # 가장 마지막의 안정된 예측 (기본값: Normal)
-last_probs = None # 마지막 확률 값 저장
-
-
 def extract_joints(frame, pose_model):
-    """프레임에서 관절점 추출 (realtime_webcam.py 방식과 동일하게 수정)"""
+    """프레임에서 관절점 추출"""
     try:
-        # 원본 해상도 프레임을 그대로 모델에 입력
         results = pose_model(frame, verbose=False)[0]
         if results.keypoints is not None and len(results.keypoints) > 0:
-            # 원본 프레임에서 추출된 keypoints
             keypoints = results.keypoints[0].data[0].cpu().numpy()
-            
-            # anomaly_detection 모델 입력을 위한 정규화 (256으로 나눔)
             joints = np.zeros(17 * 4)
             for i, kp in enumerate(keypoints):
                 if i < 17:
-                    # realtime_webcam.py와 동일한 정규화 방식 적용
-                    joints[i*4:(i+1)*4] = [kp[0]/256.0, kp[1]/256.0, 0.0, kp[2]]
-            # 시각화를 위해서는 원본 좌표 keypoints 사용
+                    joints[i*4:(i+1)*4] = [kp[0]/256, kp[1]/256, 0.0, kp[2]]
             return joints, keypoints
-        return np.zeros(17 * 4), None
+        else:
+            return np.zeros(17 * 4), None
     except Exception as e:
-        print(f"[AI 서버] 관절점 추출 오류: {e}")
+        print(f"Error processing frame: {e}")
         return np.zeros(17 * 4), None
 
-def draw_predictions(frame, probs, current_prediction):
-    """프레임에 예측 결과를 왼쪽 위에 상세히 표시 (realtime_webcam.py 스타일)"""
+def draw_predictions(frame, probs, current_prediction, fps=None):
+    """프레임에 예측 결과를 왼쪽 위에 표시"""
     overlay = frame.copy()
-    cv2.rectangle(overlay, (10, 10), (350, 150), (0, 0, 0), -1)
+    cv2.rectangle(overlay, (10, 10), (350, 200), (0, 0, 0), -1)
     cv2.addWeighted(overlay, 0.7, frame, 0.3, 0, frame)
-    
-    prediction_label = label_names[current_prediction] if current_prediction is not None else "Detecting"
-    
-    cv2.putText(frame, f"Prediction: {prediction_label}", 
-                (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
-    
-    if probs is not None:
-        y_offset = 70
-        max_prob_idx = np.argmax(probs)
-        for i, (label, prob) in enumerate(zip(label_names, probs)):
-            color = (0, 0, 255) if i == max_prob_idx else (200, 200, 200)
-            thickness = 2 if i == max_prob_idx else 1
-            text = f"{label}: {prob:.3f}"
-            if i == max_prob_idx:
-                 text += " (MAX)"
-            cv2.putText(frame, text, (20, y_offset + i * 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, thickness)
+    label_names = ["Normal", "Theft", "Abandon", "Broken"]
+    cv2.putText(frame, f"Prediction: {label_names[current_prediction]}", 
+                (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+    y_offset = 80
+    max_prob_idx = np.argmax(probs)
+    for i, (label, prob) in enumerate(zip(label_names, probs)):
+        if i == max_prob_idx:
+            color = (0, 0, 255)
+            cv2.putText(frame, f"{label}: {prob:.3f} (MAX)", 
+                        (20, y_offset + i * 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+        else:
+            color = (200, 200, 200)
+            cv2.putText(frame, f"{label}: {prob:.3f}", 
+                        (20, y_offset + i * 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
     return frame
 
-def draw_keypoints(frame, keypoints):
-    """프레임에 관절점 시각화"""
-    if keypoints is not None:
-        for kp in keypoints[:17]:
-            if len(kp) >= 3 and kp[2] > 0.1: # confidence > 0.1
-                x, y = int(kp[0]), int(kp[1])
-                cv2.circle(frame, (x, y), 5, (0, 255, 0), -1)
-    return frame
-
-
-# --- 네트워크 설정 ---
-# UDP 수신
-UDP_IP = "0.0.0.0"
-UDP_PORT = 5005
-udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-udp_sock.bind((UDP_IP, UDP_PORT))
-
-# TCP 송신
-CENTRAL_IP = "192.168.0.21"
-# CENTRAL_IP = "192.168.0.15"
-CENTRAL_PORT = 6006
-tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-# TCP 연결 시도
-while True:
-    try:
-        print(f"[AI 서버] 중앙 서버({CENTRAL_IP}:{CENTRAL_PORT})에 연결 시도 중...")
-        tcp_sock.connect((CENTRAL_IP, CENTRAL_PORT))
-        print("[AI 서버] 중앙 서버에 연결 성공!")
-        break
-    except socket.error as e:
-        print(f"[AI 서버] 연결 실패: {e}. 5초 후 재시도합니다.")
-        time.sleep(5)
-
-
-# 프레임 재조립을 위한 버퍼
-frame_buffers = {}  # {frame_id: {packet_idx: data, ...}}
-
-print(f"[AI서버] CCTV 클라이언트로부터 UDP 수신 대기 중... (Port: {UDP_PORT})")
+def setup_udp_socket(udp_ip="0.0.0.0", udp_port=5005):
+    """UDP 소켓 설정 (cctv_udp_client.py와 호환)"""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    server_address = (udp_ip, udp_port)
+    sock.bind(server_address)
+    sock.settimeout(1.0)  # 1초 타임아웃 설정
+    print(f"UDP 소켓 설정 완료: {udp_ip}:{udp_port}")
+    return sock
 
 def reassemble_frame(frame_id, packets_info):
     """패킷들을 재조립하여 완전한 프레임 생성"""
@@ -152,118 +83,242 @@ def reassemble_frame(frame_id, packets_info):
         if i in packets:
             frame_data += packets[i]
         else:
-            print(f"[AI 서버] 프레임 {frame_id}의 패킷 {i}번 누락됨.")
+            print(f"프레임 {frame_id}의 패킷 {i}번 누락됨.")
             return None  # 패킷 누락
     
     return frame_data
 
-# AI 서버 화면 설정
-cv2.namedWindow("AI Server - Processed Frame", cv2.WINDOW_NORMAL)
-cv2.resizeWindow("AI Server - Processed Frame", 1280, 720)
-
-while True:
+def receive_frame_udp_packetized(sock):
+    """패킷 분할 방식으로 UDP 프레임 수신 (cctv_udp_client.py 호환)"""
     try:
-        data, addr = udp_sock.recvfrom(65536)
+        data, addr = sock.recvfrom(65536)
         
         if len(data) < 16:
-            continue
+            return None
         
+        # 패킷 헤더 파싱: [frame_id(4bytes), packet_idx(4bytes), num_packets(4bytes), data_size(4bytes)]
         header = data[:16]
         frame_id, packet_idx, num_packets, data_size = struct.unpack('!IIII', header)
         packet_data = data[16:16+data_size]
         
-        if frame_id not in frame_buffers:
-            frame_buffers[frame_id] = {'num_packets': num_packets, 'packets': {}}
-        
-        frame_buffers[frame_id]['packets'][packet_idx] = packet_data
-        
-        if len(frame_buffers[frame_id]['packets']) == num_packets:
-            complete_frame_data = reassemble_frame(frame_id, frame_buffers[frame_id])
+        return {
+            'frame_id': frame_id,
+            'packet_idx': packet_idx,
+            'num_packets': num_packets,
+            'packet_data': packet_data,
+            'addr': addr
+        }
+    except socket.timeout:
+        return None
+    except Exception as e:
+        print(f"UDP 수신 오류: {e}")
+        return None
+
+def realtime_anomaly_detection(model_path="saved_models/추가학습패딩없이(최고).pth", 
+                              pose_model_path='yolov8n-pose.pt',
+                              sequence_length=15,
+                              udp_ip="0.0.0.0",
+                              udp_port=5005):
+    """실시간 UDP 스트림 이상 감지 (cctv_udp_client.py와 호환)"""
+    print("Loading models...")
+    model = load_model(model_path)
+    pose_model = YOLO(pose_model_path)
+    print("Models loaded successfully!")
+    
+    # UDP 소켓 설정
+    sock = setup_udp_socket(udp_ip, udp_port)
+    
+    # 프레임 재조립을 위한 버퍼
+    frame_buffers = {}  # {frame_id: {packet_idx: data, ...}}
+    
+    joints_sequence = deque(maxlen=sequence_length)
+    print("Starting real-time anomaly detection from UDP stream at 5fps...")
+    print("Press 'q' to quit, 'r' to reset sequence")
+    fps = 5
+    frame_interval = 1.0 / fps
+    last_frame_time = time.time()
+    video_buffer = deque(maxlen=45)  # 9초 전까지의 프레임 저장 (5fps * 9초)
+    pred_buffer = deque(maxlen=7)
+    saving = False
+    save_countdown = 0
+    out = None
+    filename = None
+    detected_action = None
+    last_saved_action = None
+    prev_prediction = None
+    clip_predictions = []
+    pre_buffer_frames = []  # 이상 행위 시작 전 프레임들을 저장
+    pre_buffer_size = 15  # 3초 전까지 저장 (5fps * 3초)
+    
+    try:
+        while True:
+            current_time = time.time()
+            if current_time - last_frame_time < frame_interval:
+                continue
+            last_frame_time = current_time
+
+            current_prediction = None
+
+            # UDP로 패킷 수신
+            packet_info = receive_frame_udp_packetized(sock)
+            if packet_info is None:
+                print("No packet received from UDP stream")
+                continue
             
-            if complete_frame_data:
-                # 1. 프레임 디코딩
-                nparr = np.frombuffer(complete_frame_data, np.uint8)
-                frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-
-                if frame is None:
-                    print(f"[AI 서버] 프레임 {frame_id} 디코딩 실패.")
-                    del frame_buffers[frame_id]
-                    continue
+            frame_id = packet_info['frame_id']
+            packet_idx = packet_info['packet_idx']
+            num_packets = packet_info['num_packets']
+            packet_data = packet_info['packet_data']
+            
+            # 프레임 버퍼에 패킷 추가
+            if frame_id not in frame_buffers:
+                frame_buffers[frame_id] = {'num_packets': num_packets, 'packets': {}}
+            
+            frame_buffers[frame_id]['packets'][packet_idx] = packet_data
+            
+            # 모든 패킷이 수신되었는지 확인
+            if len(frame_buffers[frame_id]['packets']) == num_packets:
+                complete_frame_data = reassemble_frame(frame_id, frame_buffers[frame_id])
                 
-                # 2. AI 모델 추론
-                joints, keypoints = extract_joints(frame, pose_model)
-                current_prediction = None
-                
-                if keypoints is not None:
-                    joints_sequence.append(joints)
-                    if len(joints_sequence) == sequence_length:
-                        input_tensor = torch.FloatTensor(list(joints_sequence)).unsqueeze(0).to(device)
-                        with torch.no_grad():
-                            logits = anomaly_model(input_tensor)
-                            probs = F.softmax(logits[:, -1, :], dim=-1).cpu().numpy()[0]
-                        
-                        last_probs = probs # 시각화를 위해 확률 저장
-                        current_prediction = np.argmax(probs)
-
-                        # 예측 안정화 로직 (realtime_webcam.py와 동일하게)
+                if complete_frame_data:
+                    # JPEG 데이터를 프레임으로 디코딩
+                    frame = cv2.imdecode(np.frombuffer(complete_frame_data, dtype=np.uint8), cv2.IMREAD_COLOR)
+                    
+                    if frame is None:
+                        print(f"프레임 {frame_id} 디코딩 실패.")
+                        del frame_buffers[frame_id]
+                        continue
+                    
+                    # 이상 감지 로직
+                    joints, keypoints = extract_joints(frame, pose_model)
+                    has_person = False
+                    if keypoints is not None:
+                        for kp in keypoints[:17]:
+                            if len(kp) >= 3:
+                                x, y, conf = kp[0], kp[1], kp[2]
+                                if conf > 0.1:
+                                    has_person = True
+                                    cv2.circle(frame, (int(x), int(y)), 3, (0, 255, 0), -1)
+                    if has_person:
+                        joints_sequence.append(joints)
+                        if len(joints_sequence) >= sequence_length:
+                            input_tensor = torch.FloatTensor(list(joints_sequence)).unsqueeze(0).to(device)
+                            with torch.no_grad():
+                                logits = model(input_tensor)
+                                probs = F.softmax(logits[:, -1, :], dim=-1).cpu().numpy()[0]
+                            
+                            # 신뢰도가 0.8 이상일 때만 해당 라벨로 예측, 그 이하는 Normal
+                            max_prob = np.max(probs)
+                            if max_prob >= 0.8:
+                                current_prediction = np.argmax(probs)
+                            else:
+                                current_prediction = 0  # Normal로 분류
+                            
+                            frame = draw_predictions(frame, probs, current_prediction, None)
+                            joints_sequence.popleft()
+                        else:
+                            remaining = sequence_length - len(joints_sequence)
+                            cv2.putText(frame, f"Collecting data... ({remaining} frames left)", 
+                                        (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+                    else:
+                        cv2.putText(frame, "No person detected", 
+                                    (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+                        pass
+                    video_buffer.append(frame.copy())
+                    
+                    # 프레임을 미리 저장 (이상 행위 시작 전용)
+                    pre_buffer_frames.append(frame.copy())
+                    if len(pre_buffer_frames) > pre_buffer_size:
+                        pre_buffer_frames.pop(0)  # 가장 오래된 프레임 제거
+                    
+                    if current_prediction is not None:
                         if prev_prediction is not None and current_prediction != prev_prediction:
                             pred_buffer.clear()
-                        
                         pred_buffer.append(current_prediction)
                         prev_prediction = current_prediction
-                else:
-                    # 사람이 없으면 아무것도 안함 (버퍼 유지)
-                    prev_prediction = None # 사람이 사라졌으므로 이전 예측 리셋
-
-                # 3. 안정적인 예측 결정 (민감도 조절)
-                final_prediction = last_stable_prediction
-                # 버퍼가 가득 차고, 모든 예측이 동일할 때만 안정적인 예측으로 간주
-                if len(pred_buffer) == 7 and len(set(pred_buffer)) == 1:
-                    final_prediction = pred_buffer[0]
-                    last_stable_prediction = final_prediction # 안정된 예측 업데이트
+                        frame = draw_predictions(frame, probs, current_prediction, None)
+                    if (
+                        len(pred_buffer) == 7 and
+                        len(set(pred_buffer)) == 1 and
+                        pred_buffer[0] != 0 and
+                        not saving and
+                        pred_buffer[0] != last_saved_action
+                    ):
+                        saving = True
+                        save_countdown = 45
+                        detected_action = list(set(pred_buffer))[0]
+                        last_saved_action = detected_action
+                        dt_str = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+                        action_name = ["Normal", "Theft", "Abandon", "Broken"][detected_action]
+                        filename = f"{action_name}_{dt_str}.mp4"
+                        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+                        height, width = frame.shape[:2]
+                        out = cv2.VideoWriter(filename, fourcc, 5, (width, height))
+                        print(f"Started saving clip: {filename}")
+                        
+                        # 미리 저장된 프레임들도 함께 저장 (이상 행위 시작 전)
+                        for pre_frame in pre_buffer_frames:
+                            out.write(pre_frame)
+                            print(f"Added pre-buffer frame to {filename}")
+                    
+                    if saving:
+                        out.write(frame)
+                        if current_prediction is not None:
+                            clip_predictions.append(current_prediction)
+                        save_countdown -= 1
+                        if save_countdown == 0:
+                            out.release()
+                            saving = False
+                            # Normal(0)과 None 제외한 다수결
+                            abnormal_preds = [p for p in clip_predictions if p not in (0, None)]
+                            if abnormal_preds:
+                                major_action = Counter(abnormal_preds).most_common(1)[0][0]
+                                action_name = ["Normal", "Theft", "Abandon", "Broken"][major_action]
+                                new_filename = f"{action_name}_{dt_str}.mp4"
+                                os.rename(filename, new_filename)
+                                print(f"Clip saved: {new_filename}")
+                            else:
+                                os.remove(filename)
+                                print("Clip was mostly Normal, so it was deleted.")
+                            last_saved_action = None
+                            clip_predictions = []
+                    cv2.imshow('Real-time Anomaly Detection (UDP)', frame)
                 
-                # 4. 결과 시각화
-                processed_frame = draw_keypoints(frame.copy(), keypoints)
-                processed_frame = draw_predictions(processed_frame, last_probs, final_prediction)
-                
-                # 5. 처리된 프레임을 중앙 서버로 전송
-                ret, buffer = cv2.imencode('.jpg', processed_frame, [cv2.IMWRITE_JPEG_QUALITY, 90])
-                if ret:
-                    encoded_frame = buffer.tobytes()
-                    tcp_sock.sendall(struct.pack('!I', len(encoded_frame)) + encoded_frame)
-                
-                # 6. AI 서버 화면에 표시
-                cv2.imshow("AI Server - Processed Frame", processed_frame)
+                # 완성된 프레임 버퍼 삭제
+                del frame_buffers[frame_id]
+            
+            # 오래된 프레임 버퍼 정리
+            current_frame_id = max(frame_buffers.keys()) if frame_buffers else 0
+            old_frames = [fid for fid in frame_buffers.keys() if fid < current_frame_id - 10]
+            for old_frame in old_frames:
+                del frame_buffers[old_frame]
+            
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord('q'):
+                print("Quitting...")
+                break
+            elif key == ord('r'):
+                print("Resetting sequence...")
+                joints_sequence.clear()
+                video_buffer.clear()
+                pred_buffer.clear()
+            elif key == ord('s'):
+                timestamp = time.strftime("%Y%m%d_%H%M%S")
+                snapname = f"screenshot_{timestamp}.jpg"
+                cv2.imwrite(snapname, frame)
+                print(f"Screenshot saved as {snapname}")
+    except KeyboardInterrupt:
+        print("\nInterrupted by user")
+    finally:
+        sock.close()
+        cv2.destroyAllWindows()
+        if out is not None and saving:
+            out.release()
+        print("UDP connection closed")
 
-            # 완성된 프레임 버퍼 삭제
-            del frame_buffers[frame_id]
-        
-        # 오래된 프레임 버퍼 정리
-        current_frame_id = max(frame_buffers.keys()) if frame_buffers else 0
-        old_frames = [fid for fid in frame_buffers.keys() if fid < current_frame_id - 10]
-        for old_frame in old_frames:
-            del frame_buffers[old_frame]
-        
-        if cv2.waitKey(1) == 27: # ESC 키 누르면 종료
-            break
-
-    except Exception as e:
-        print(f"[AI 서버] 메인 루프 오류: {e}")
-        # TCP 연결이 끊어졌을 경우 재연결 시도
-        if isinstance(e, (BrokenPipeError, ConnectionResetError)):
-            print("[AI 서버] TCP 연결이 끊어졌습니다. 재연결을 시도합니다...")
-            tcp_sock.close()
-            tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            while True:
-                try:
-                    tcp_sock.connect((CENTRAL_IP, CENTRAL_PORT))
-                    print("[AI 서버] 중앙 서버에 재연결 성공!")
-                    break
-                except socket.error as se:
-                    print(f"[AI 서버] 재연결 실패: {se}. 5초 후 재시도합니다.")
-                    time.sleep(5)
-
-print("[AI 서버] 종료 중...")
-tcp_sock.close()
-udp_sock.close()
-cv2.destroyAllWindows()
+if __name__ == "__main__":
+    model_path = "/home/ckim/dev_ws/project_ws/deeplearning-repo-4/saved_models/추가학습패딩없이(최고).pth"
+    # UDP 설정 - cctv_udp_client.py와 호환
+    udp_ip = "0.0.0.0"  # 모든 인터페이스에서 수신
+    udp_port = 5005     # cctv_udp_client.py와 동일한 포트
+    realtime_anomaly_detection(model_path=model_path, udp_ip=udp_ip, udp_port=udp_port) 
