@@ -34,7 +34,7 @@ def load_anomaly_model(model_path):
     return model
 
 # 모델 경로 설정
-anomaly_model_path = "/home/ckim/dev_ws/project_ws/mldl_project/model/actual_anomaly_detector.pth"
+anomaly_model_path = "../saved_models/actual_anomaly_detector.pth"
 pose_model_path = 'yolov8n-pose.pt'
 
 print("[AI 서버] 모델 로딩 중...")
