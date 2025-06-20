@@ -5,10 +5,7 @@ import time
 import struct
 import numpy as np
 
-UDP_IP = "192.168.0.21" # 채연 pc
-# UDP_IP = "192.168.0.15" # 원호 pc 
-UDP_PORT = 5005
-MAX_PACKET_SIZE = 60000  # UDP 패킷 크기 제한
+from config import AI_IP, AI_PORT, MAX_PACKET_SIZE
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 cap = cv2.VideoCapture(0)
@@ -46,7 +43,7 @@ def send_frame_in_packets(frame_data, frame_id):
         header = struct.pack('!IIII', frame_id, packet_idx, num_packets, len(packet_data))
         packet = header + packet_data
         
-        sock.sendto(packet, (UDP_IP, UDP_PORT))
+        sock.sendto(packet, (AI_IP, AI_PORT))
         print(f"[CCTV] 프레임 {frame_id}, 패킷 {packet_idx+1}/{num_packets}, 크기: {len(packet_data)} bytes")
 
 def recv_full(sock, size):

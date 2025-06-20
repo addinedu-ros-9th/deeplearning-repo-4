@@ -12,6 +12,8 @@ import torch.nn.functional as F
 import sys
 import os
 
+from config import RECIEVER_IP, RECIEVER_PORT, CENTRAL_IP, CENTRAL_PORT
+
 # ai_server.py가 있는 디렉토리의 부모 디렉토리를 경로에 추가
 # 이렇게 하면 deeplearning-repo-4 폴더를 기준으로 anomaly_detection 모듈을 찾을 수 있음
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -108,16 +110,9 @@ def draw_keypoints(frame, keypoints):
 
 
 # --- 네트워크 설정 ---
-# UDP 수신
-UDP_IP = "0.0.0.0"
-UDP_PORT = 5005
 udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-udp_sock.bind((UDP_IP, UDP_PORT))
+udp_sock.bind((RECIEVER_IP, RECIEVER_PORT))
 
-# TCP 송신
-CENTRAL_IP = "192.168.0.21"
-# CENTRAL_IP = "192.168.0.15"
-CENTRAL_PORT = 6006
 tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 # TCP 연결 시도
@@ -135,7 +130,7 @@ while True:
 # 프레임 재조립을 위한 버퍼
 frame_buffers = {}  # {frame_id: {packet_idx: data, ...}}
 
-print(f"[AI서버] CCTV 클라이언트로부터 UDP 수신 대기 중... (Port: {UDP_PORT})")
+print(f"[AI서버] CCTV 클라이언트로부터 UDP 수신 대기 중... (Port: {RECIEVER_PORT})")
 
 def reassemble_frame(frame_id, packets_info):
     """패킷들을 재조립하여 완전한 프레임 생성"""
