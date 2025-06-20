@@ -115,8 +115,8 @@ udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 udp_sock.bind((UDP_IP, UDP_PORT))
 
 # TCP 송신
-CENTRAL_IP = "192.168.0.21"
-# CENTRAL_IP = "192.168.0.15"
+# CENTRAL_IP = "192.168.0.21"
+CENTRAL_IP = "192.168.0.15"
 CENTRAL_PORT = 6006
 tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
