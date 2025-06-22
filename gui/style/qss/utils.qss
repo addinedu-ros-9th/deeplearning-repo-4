@@ -19,6 +19,8 @@
 .bg.gray6 { background-color: #666; }
 .bg.gray9 { background-color: #999; }
 .bg.grayc { background-color: #ccc; }
+.bg.graye { background-color: #eee; }
+.bg.grayf5 { background-color: #f5f5f5; }
 
 /* text color */
 .color-white { color: white; }
@@ -55,6 +57,10 @@
 .weight700 { font-weight: 700; }
 .weight800 { font-weight: 800; }
 .weight900 { font-weight: 900; }
+
+.align-center {
+    text-align: center;
+} 
 
 /* etc */
 .hidden {

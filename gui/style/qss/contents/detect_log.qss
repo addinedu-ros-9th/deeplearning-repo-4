@@ -1,0 +1,7 @@
+.toggle.active {
+    background-color: white;
+    color: black;
+    font-weight: 700;
+    border: 1px solid #999;
+    border-radius: {{radius}};
+}
