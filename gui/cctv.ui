@@ -115,6 +115,21 @@
     </property>
    </item>
   </widget>
+  <widget class="QTableWidget" name="detect_table">
+   <property name="geometry">
+    <rect>
+     <x>910</x>
+     <y>78</y>
+     <width>330</width>
+     <height>762</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Inter 18pt</family>
+    </font>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections/>

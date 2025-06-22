@@ -22,7 +22,9 @@ class CCTVWidget(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.title.setText("GS25 금천점")
         self.comboBox.setStyleSheet("")
-
+        
+        self.detect_table.setProperty("class", "table small")
+        
         # 네트워크 연결 설정
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((CENTRAL_IP, 7007))
@@ -39,6 +41,147 @@ class CCTVWidget(QWidget):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_frame)
         # self.timer.start(int(1000 / frame)) 
+
+        # detect table 설정
+        # 열 헤더 설정
+        column = ["기록 시점", "불법행위 종류", "녹화 클립"]
+        original_data = [
+            ["2023-06-21 14:30", "파손", "./video01.mp4"],
+            ["2023-06-21 14:30", "유기", "./video01.mp4"],
+            ["2023-06-21 14:30", "파손", "./video01.mp4"],
+            ["2023-06-21 14:30", "전등 끔", "./video01.mp4"],
+            ["2023-06-21 14:30", "절도", "./video01.mp4"],
+            ["2023-06-21 14:30", "파손", "./video01.mp4"],
+            ["2023-06-21 14:30", "유기", "./video01.mp4"],
+            ["2023-06-21 14:30", "파손", "./video01.mp4"],
+            ["2023-06-21 14:30", "전등 끔", "./video01.mp4"],
+            ["2023-06-21 14:30", "절도", "./video01.mp4"],
+            ["2023-06-21 14:30", "파손", "./video01.mp4"],
+            ["2023-06-21 14:30", "유기", "./video01.mp4"],
+            ["2023-06-21 14:30", "파손", "./video01.mp4"],
+            ["2023-06-21 14:30", "전등 끔", "./video01.mp4"],
+            ["2023-06-21 14:30", "절도", "./video01.mp4"],
+        ]
+        self.data = original_data.copy()
+
+        def dataChange():
+            if self.comboBox.currentText() == "전체":
+                self.data = original_data.copy()
+            elif self.comboBox.currentText() == "파손":
+                self.data = [row for row in original_data if row[1] == "파손"]
+            elif self.comboBox.currentText() == "유기":
+                self.data = [row for row in original_data if row[1] == "유기"]
+            elif self.comboBox.currentText() == "절도":
+                self.data = [row for row in original_data if row[1] == "절도"]
+            elif self.comboBox.currentText() == "전등 끔":
+                self.data = [row for row in original_data if row[1] == "전등 끔"]
+
+            self.detect_table.setRowCount(len(self.data))  # 필터링된 데이터 행 개수만큼 설정
+            
+            for row, row_data in enumerate(self.data):
+                for col, value in enumerate(row_data):
+                    if col == 1:  # 불법행위 comboBox 종류 열
+                        behavior_label = QLabel(value)
+                        if value == "파손":
+                            behavior_label.setProperty("class", "label behavior broken")
+                        elif value == "유기":
+                            behavior_label.setProperty("class", "label behavior abandon")
+                        elif value == "절도":
+                            behavior_label.setProperty("class", "label behavior theft")
+                        elif value == "전등 끔":
+                            behavior_label.setProperty("class", "label behavior light_off")
+
+                        behavior_label.setAlignment(Qt.AlignmentFlag.AlignCenter)  # 가운데 정렬
+
+                        layout = QHBoxLayout()
+                        layout.addWidget(behavior_label)
+                        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)  # 가운데 정렬
+                        layout.setContentsMargins(0, 0, 0, 0)  # 여백 제거
+
+                        # 셀에 레이아웃 설정
+                        cell_widget = QWidget()
+                        cell_widget.setLayout(layout)
+                        self.detect_table.setCellWidget(row, col, cell_widget)
+                    elif col == 2:  # 녹화 클립 열
+                        delete_button = QPushButton("")
+                        delete_button.setProperty("class", "btn clip small")
+                        # 삭제 버튼을 가운데 정렬하기 위한 레이아웃 설정
+                        layout = QHBoxLayout()
+                        layout.addWidget(delete_button)
+                        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)  # 가운데 정렬
+                        layout.setContentsMargins(0, 0, 0, 0)  # 여백 제거
+
+                        # 셀에 레이아웃 설정
+                        cell_widget = QWidget()
+                        cell_widget.setLayout(layout)
+                        self.detect_table.setCellWidget(row, col, cell_widget)
+                    else:  # 기록 시점 열
+                        item = QTableWidgetItem(value)
+                        self.detect_table.setItem(row, col, item)
+
+        self.comboBox.currentIndexChanged.connect(dataChange)
+
+        # 테이블 크기 조정
+        self.detect_table.setRowCount(len(self.data))  # 데이터 행 개수만큼 설정
+        self.detect_table.setColumnCount(len(column))  # 열 개수 설정
+        self.detect_table.setHorizontalHeaderLabels(column)
+
+        for row, row_data in enumerate(self.data):
+            for col, value in enumerate(row_data):
+                if col == 1: # 불법행위 comboBox 종류 열
+                    behavior_label = QLabel(value)
+                    if value == "파손" : 
+                        behavior_label.setProperty("class", "label behavior broken")
+                    elif value == "유기" :
+                        behavior_label.setProperty("class", "label behavior abandon")
+                    elif value == "절도" :
+                        behavior_label.setProperty("class", "label behavior theft")
+                    elif value == "전등 끔" :
+                        behavior_label.setProperty("class", "label behavior light_off")
+                        
+                    behavior_label.setAlignment(Qt.AlignmentFlag.AlignCenter)  # 가운데 정렬
+
+                    layout = QHBoxLayout()
+                    layout.addWidget(behavior_label)
+                    layout.setAlignment(Qt.AlignmentFlag.AlignCenter)  # 가운데 정렬
+                    layout.setContentsMargins(0, 0, 0, 0)  # 여백 제거
+                    
+                    # 셀에 레이아웃 설정
+                    cell_widget = QWidget()
+                    cell_widget.setLayout(layout)
+                    self.detect_table.setCellWidget(row, col, cell_widget)
+                elif col == 2:  # 녹화 클립 열
+                    delete_button = QPushButton("")
+                    delete_button.setProperty("class", "btn clip small")
+                     # 삭제 버튼을 가운데 정렬하기 위한 레이아웃 설정
+                    layout = QHBoxLayout()
+                    layout.addWidget(delete_button)
+                    layout.setAlignment(Qt.AlignmentFlag.AlignCenter)  # 가운데 정렬
+                    layout.setContentsMargins(0, 0, 0, 0)  # 여백 제거
+                    
+                    # 셀에 레이아웃 설정
+                    cell_widget = QWidget()
+                    cell_widget.setLayout(layout)
+                    self.detect_table.setCellWidget(row, col, cell_widget)
+
+                else:  # 기록 시점 열
+                    item = QTableWidgetItem(value)
+                    # label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                    self.detect_table.setItem(row, col, item)
+
+        column_widths = [100, 80, 24]
+        for i, width in enumerate(column_widths):
+            self.detect_table.setColumnWidth(i, width)
+        
+        # 특정 열을 화면 크기에 맞게 늘어나도록 설정
+        self.detect_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)  # 첫 번째 열
+
+        # 헤더 숨기기
+        self.detect_table.horizontalHeader().setVisible(False)  # 열 헤더 숨기기
+        # 행 번호 숨기기
+        self.detect_table.verticalHeader().setVisible(False)
+        # 그리드 라인 제거
+        self.detect_table.setShowGrid(False) 
 
     def showEvent(self, event):
         # 화면에 보일 때만 타이머 시작
