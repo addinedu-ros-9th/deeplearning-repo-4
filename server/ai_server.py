@@ -29,6 +29,56 @@ from anomaly_detection import AnomalyDetector
 
 # --- 모델 및 디바이스 설정 ---
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+tcp_sock = None # TCP 소켓을 전역 변수로 관리
+
+def ensure_tcp_connection():
+    """TCP 소켓 연결을 확인하고, 끊겼으면 재연결합니다."""
+    global tcp_sock
+    if tcp_sock:
+        # 소켓의 유효성 검사 (간단한 방법)
+        try:
+            # 소켓 옵션을 확인하여 연결 상태를 간접적으로 체크
+            tcp_sock.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
+            return True
+        except socket.error:
+            print("[AI 서버] TCP 연결이 끊어진 것을 확인했습니다. 재연결을 시도합니다.")
+            tcp_sock.close()
+            tcp_sock = None
+
+    # 소켓이 없거나 끊겼을 경우 새로 연결
+    try:
+        print(f"[AI 서버] 중앙 서버({CENTRAL_IP}:{CENTRAL_PORT})에 연결 시도 중...")
+        tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        tcp_sock.connect((CENTRAL_IP, CENTRAL_PORT))
+        print("[AI 서버] 중앙 서버에 연결 성공!")
+        return True
+    except socket.error as e:
+        print(f"[AI 서버] TCP 연결 실패: {e}")
+        tcp_sock = None
+        return False
+
+def send_frame_tcp(frame):
+    """처리된 프레임을 중앙 서버로 전송 (연결 확인 기능 포함)"""
+    global tcp_sock
+    if not ensure_tcp_connection():
+        time.sleep(1) # 연결 실패 시 잠시 대기
+        return
+
+    try:
+        # 프레임을 JPEG로 인코딩
+        result, encoded_frame = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 90])
+        if result:
+            data = encoded_frame.tobytes()
+            # 데이터 길이를 먼저 보내고 그 다음 실제 데이터를 전송
+            if tcp_sock:
+                tcp_sock.sendall(struct.pack('!I', len(data)) + data)
+        else:
+            print("[AI 서버] 프레임 인코딩 실패")
+    except socket.error as e:
+        print(f"[AI 서버] TCP 전송 오류: {e}")
+        if tcp_sock:
+            tcp_sock.close()
+        tcp_sock = None
 
 def load_model(model_path):
     """모델 로드 함수"""
@@ -95,19 +145,9 @@ def setup_udp_socket(udp_ip, udp_port):
 
 
 # --- 네트워크 설정 ---
-tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-# TCP 연결 시도
-while True:
-    try:
-        print(f"[AI 서버] 중앙 서버({CENTRAL_IP}:{CENTRAL_PORT})에 연결 시도 중...")
-        tcp_sock.connect((CENTRAL_IP, CENTRAL_PORT))
-        print("[AI 서버] 중앙 서버에 연결 성공!")
-        break
-    except socket.error as e:
-        print(f"[AI 서버] 연결 실패: {e}. 5초 후 재시도합니다.")
-        time.sleep(5)
-
+# 이 부분의 기존 TCP 연결 로직은 ensure_tcp_connection 함수로 대체되었으므로 제거합니다.
+# tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# while True: ...
 
 # 프레임 재조립을 위한 버퍼
 frame_buffers = {}  # {frame_id: {packet_idx: data, ...}}
@@ -160,7 +200,7 @@ def receive_frame_udp_packetized(sock):
         print(f"UDP 수신 오류: {e}")
         return None
 
-def realtime_anomaly_detection(model_path="saved_models/추가학습패딩없이(최고).pth", 
+def realtime_anomaly_detection(model_path,  # model_path를 필수로 받도록 변경
                               pose_model_path='yolov8n-pose.pt',
                               sequence_length=15,
                               udp_ip="0.0.0.0",
@@ -300,38 +340,47 @@ def realtime_anomaly_detection(model_path="saved_models/추가학습패딩없이
                         dt_str = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
                         action_name = ["Normal", "Theft", "Abandon", "Broken"][detected_action]
                         filename = f"{action_name}_{dt_str}.mp4"
-                        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+                        fourcc = cv2.VideoWriter.fourcc(*'mp4v')
                         height, width = frame.shape[:2]
                         out = cv2.VideoWriter(filename, fourcc, 5, (width, height))
-                        print(f"Started saving clip: {filename}")
                         
-                        # 미리 저장된 프레임들도 함께 저장 (이상 행위 시작 전)
-                        for pre_frame in pre_buffer_frames:
-                            out.write(pre_frame)
-                            print(f"Added pre-buffer frame to {filename}")
+                        if out.isOpened():
+                            print(f"Started saving clip: {filename}")
+                            for pre_frame in pre_buffer_frames:
+                                out.write(pre_frame)
+                        else:
+                            print(f"Failed to open video writer for {filename}")
+                            saving = False
                     
                     if saving:
-                        out.write(frame)
+                        if out and out.isOpened():
+                            out.write(frame)
+
                         if current_prediction is not None:
                             clip_predictions.append(current_prediction)
                         save_countdown -= 1
+
                         if save_countdown == 0:
-                            out.release()
+                            if out and out.isOpened():
+                                out.release()
                             saving = False
-                            # Normal(0)과 None 제외한 다수결
+                            
                             abnormal_preds = [p for p in clip_predictions if p not in (0, None)]
                             if abnormal_preds:
                                 major_action = Counter(abnormal_preds).most_common(1)[0][0]
                                 action_name = ["Normal", "Theft", "Abandon", "Broken"][major_action]
                                 new_filename = f"{action_name}_{dt_str}.mp4"
-                                os.rename(filename, new_filename)
-                                print(f"Clip saved: {new_filename}")
+                                if filename and os.path.exists(filename):
+                                    os.rename(filename, new_filename)
+                                    print(f"Clip saved: {new_filename}")
                             else:
-                                os.remove(filename)
-                                print("Clip was mostly Normal, so it was deleted.")
+                                if filename and os.path.exists(filename):
+                                    os.remove(filename)
+                                    print("Clip was mostly Normal, so it was deleted.")
+                            
                             last_saved_action = None
                             clip_predictions = []
-                    cv2.imshow('Real-time Anomaly Detection (UDP)', frame)
+                    send_frame_tcp(frame)
                 
                 # 완성된 프레임 버퍼 삭제
                 del frame_buffers[frame_id]
@@ -360,13 +409,18 @@ def realtime_anomaly_detection(model_path="saved_models/추가학습패딩없이
         print("\nInterrupted by user")
     finally:
         sock.close()
+        if tcp_sock: # 프로그램 종료 시 소켓 닫기
+            tcp_sock.close()
         cv2.destroyAllWindows()
         if out is not None and saving:
             out.release()
         print("UDP connection closed")
 
 if __name__ == "__main__":
-    model_path = "saved_models/노말변경3개.pth"
+    # 프로젝트 루트를 기준으로 모델 파일의 절대 경로 생성
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    model_path = os.path.join(project_root, "saved_models/노말변경3개.pth")
+    
     # UDP 설정 - cctv_udp_client.py와 호환
     udp_ip = "0.0.0.0"  # 모든 인터페이스에서 수신
     udp_port = 5005     # cctv_udp_client.py와 동일한 포트

@@ -11,6 +11,8 @@ import socket
 import numpy as np
 import struct
 
+from server.config import CENTRAL_IP, CENTRAL_PORT
+
 class CCTVWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -23,7 +25,7 @@ class CCTVWidget(QWidget):
 
         # 네트워크 연결 설정
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.connect(('192.168.0.15', 7007))
+        self.sock.connect((CENTRAL_IP, 7007))
         # self.sock.connect(('192.168.0.21', 7007))
         self.sock.settimeout(0.1)
         # self.cap = cv2.VideoCapture(0) # 웹캠
@@ -90,6 +92,7 @@ class CCTVWidget(QWidget):
             else:
                 print("프레임 디코딩 실패")
         except socket.timeout:
+            print("데이터 수신 대기 시간 초과... 서버로부터 데이터가 오고 있는지 확인하세요.")
             pass
         except Exception as e:
             print("프레임 수신 중 오류:", e)
