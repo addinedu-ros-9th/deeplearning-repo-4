@@ -6,7 +6,18 @@ QPushButton:focus, QPushButton:pressed {
 }
 
 .btn {
+    font-size: 14px;
+    height: 36px;
     border-radius: {{radius}};
+}
+
+.btn.outlined.primary {
+    color: {{primary}};
+    border: 1px solid {{primary}};
+}
+
+.btn.outlined.primary:hover {
+    background-color: rgba(3, 180, 200, 0.1);
 }
 
 .btn.contained {
@@ -27,4 +38,137 @@ QPushButton:focus, QPushButton:pressed {
     font-weight: bold;
     font-size: 16px;
     height: 44px;
+}
+
+.btn.delete {
+    qproperty-icon: url("./style/images/ico-delete.png");
+    qproperty-iconSize: 18px 18px;
+    border: 1px solid #666;
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+    min-height: 22px;
+    max-width: 22px;
+    max-height: 22px;
+    background-color: white;;
+    border-radius: {{radius}};
+}
+
+.btn.delete:hover {
+    background-color: #eee;
+}
+
+.btn.clip {
+    qproperty-icon: url("./style/images/ico-cctv.png");
+    qproperty-iconSize: 18px 18px;
+    width: 100px;
+    height: 22px;
+    min-width: 100px;
+    min-height: 22px;
+    max-width: 100px;
+    max-height: 22px;
+    background-color: white;;
+    border: 1px solid {{primary}};
+    border-radius: {{radius}};
+}
+
+
+.btn.confirm {
+    width: 75px;
+    height: 22px;
+    min-width: 75px;
+    min-height: 22px;
+    max-width: 75px;
+    max-height: 22px;
+    background-color: white;;
+    font-size: 12px;
+    font-weight: 600;
+    color: {{primary}};
+    border: 1px solid {{primary}};
+    border-radius: {{radius}};
+}
+
+.btn.clip:hover,
+.btn.confirm:hover {
+    background-color: rgba(3, 180, 200, 0.1);
+}
+
+.label.confirm {
+    width: 160px;
+    min-width: 160px;
+    max-width: 160px;
+    height: 21px;
+    min-height: 21px;
+    max-height: 21px;
+    font-size: 12px;
+    background-color: rgba(3, 180, 200, 0.1);
+    font-weight: 600;
+    border-radius: {{radius}};
+    color: {{primary}};
+}
+
+.label.unconfirm {
+    width: 75px;
+    min-width: 75px;
+    max-width: 75px;
+    height: 21px;
+    min-height: 21px;
+    max-height: 21px;
+    font-size: 12px;
+    background-color: rgba(52, 89, 132, 0.1);
+    font-weight: 600;
+    border-radius: {{radius}};
+    color: {{secondary}};
+}
+
+.label.behavior {
+    width: 68px;
+    min-width: 68px;
+    max-width: 68px;
+    height: 21px;
+    min-height: 21px;
+    max-height: 21px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: {{radius}};
+}
+
+.label.behavior.theft {
+    background-color: rgba(249, 140, 171, 0.1);
+    color: {{therity}};
+}
+
+.label.behavior.abandon {
+    background-color: rgba(52, 89, 132, 0.1);
+    color: {{secondary}};
+}
+
+.label.behavior.broken {
+    background-color: rgba(3, 180, 200, 0.1);
+    color: {{primary}};
+}
+.label.behavior.light_off {
+    background-color: rgba(215, 176, 23, 0.1);
+    color: {{fourth_dark}}
+}
+
+.btn.comfirm {
+    width: 50px;
+    min-width: 50px;
+    max-width: 50px;
+    height: 24px;
+    min-height: 24px;
+    max-height: 24px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #999;
+    background-color: #eee;
+}
+.btn.comfirm.changed {
+    background-color: white;
+    color: {{primary}};
+    border: 1px solid {{primary}};
+}
+.btn.comfirm.changed:hover {
+    background-color: rgba(3, 180, 200, 0.1);
 }
