@@ -14,6 +14,7 @@ from collections import deque, Counter
 import time
 import datetime
 import socket
+import struct
 
 from config import RECIEVER_IP, RECIEVER_PORT, CENTRAL_IP, CENTRAL_PORT
 
@@ -84,11 +85,16 @@ def draw_keypoints(frame, keypoints):
                 cv2.circle(frame, (x, y), 5, (0, 255, 0), -1)
     return frame
 
+def setup_udp_socket(udp_ip, udp_port):
+    """UDP 소켓을 설정하고 지정된 IP와 포트에 바인딩합니다."""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind((udp_ip, udp_port))
+    sock.settimeout(2.0)  # 수신 대기 시간 초과를 2초로 설정
+    print(f"UDP 서버가 {udp_ip}:{udp_port}에서 수신 대기 중입니다.")
+    return sock
+
 
 # --- 네트워크 설정 ---
-udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-udp_sock.bind((RECIEVER_IP, RECIEVER_PORT))
-
 tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 # TCP 연결 시도
@@ -360,7 +366,7 @@ def realtime_anomaly_detection(model_path="saved_models/추가학습패딩없이
         print("UDP connection closed")
 
 if __name__ == "__main__":
-    model_path = "/home/ckim/dev_ws/project_ws/deeplearning-repo-4/saved_models/추가학습패딩없이(최고).pth"
+    model_path = "saved_models/노말변경3개.pth"
     # UDP 설정 - cctv_udp_client.py와 호환
     udp_ip = "0.0.0.0"  # 모든 인터페이스에서 수신
     udp_port = 5005     # cctv_udp_client.py와 동일한 포트
