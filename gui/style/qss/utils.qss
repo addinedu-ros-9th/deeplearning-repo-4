@@ -36,6 +36,9 @@
 .color-fourth       { color: {{fourth}};       } 
 .color-fourth_dark  { color: {{fourth_dark}};  }
 
+/* outline */
+.otlc { border: 1px solid #ccc }
+
 /* font size */
 .size10 { font-size: 10px; }
 .size12 { font-size: 12px; }
@@ -61,6 +64,8 @@
 .align-center {
     text-align: center;
 } 
+
+.radius { border-radius: {{radius}}; }
 
 /* etc */
 .hidden {
