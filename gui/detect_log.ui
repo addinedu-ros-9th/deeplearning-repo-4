@@ -174,58 +174,6 @@
     <number>10</number>
    </property>
   </widget>
-  <widget class="QDateEdit" name="date1">
-   <property name="geometry">
-    <rect>
-     <x>186</x>
-     <y>20</y>
-     <width>200</width>
-     <height>36</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <family>Inter 18pt</family>
-    </font>
-   </property>
-  </widget>
-  <widget class="QLabel" name="range1">
-   <property name="geometry">
-    <rect>
-     <x>396</x>
-     <y>20</y>
-     <width>20</width>
-     <height>36</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <family>Inter 18pt</family>
-     <bold>true</bold>
-    </font>
-   </property>
-   <property name="text">
-    <string>~</string>
-   </property>
-   <property name="margin">
-    <number>10</number>
-   </property>
-  </widget>
-  <widget class="QDateEdit" name="date2">
-   <property name="geometry">
-    <rect>
-     <x>416</x>
-     <y>20</y>
-     <width>200</width>
-     <height>36</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <family>Inter 18pt</family>
-    </font>
-   </property>
-  </widget>
   <widget class="QCheckBox" name="checkbox1">
    <property name="geometry">
     <rect>
@@ -449,6 +397,305 @@
     <enum>Qt::SolidLine</enum>
    </property>
   </widget>
+  <widget class="QSpinBox" name="year1">
+   <property name="geometry">
+    <rect>
+     <x>186</x>
+     <y>24</y>
+     <width>80</width>
+     <height>28</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Inter 18pt</family>
+    </font>
+   </property>
+   <property name="minimum">
+    <number>2020</number>
+   </property>
+   <property name="maximum">
+    <number>2030</number>
+   </property>
+  </widget>
+  <widget class="QLabel" name="text_year1">
+   <property name="geometry">
+    <rect>
+     <x>271</x>
+     <y>20</y>
+     <width>20</width>
+     <height>36</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Inter 18pt</family>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>년</string>
+   </property>
+   <property name="margin">
+    <number>0</number>
+   </property>
+  </widget>
+  <widget class="QSpinBox" name="month1">
+   <property name="geometry">
+    <rect>
+     <x>291</x>
+     <y>24</y>
+     <width>50</width>
+     <height>28</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Inter 18pt</family>
+    </font>
+   </property>
+   <property name="minimum">
+    <number>1</number>
+   </property>
+   <property name="maximum">
+    <number>12</number>
+   </property>
+  </widget>
+  <widget class="QLabel" name="text_month1">
+   <property name="geometry">
+    <rect>
+     <x>346</x>
+     <y>20</y>
+     <width>20</width>
+     <height>36</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Inter 18pt</family>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>월</string>
+   </property>
+   <property name="margin">
+    <number>0</number>
+   </property>
+  </widget>
+  <widget class="QSpinBox" name="date1">
+   <property name="geometry">
+    <rect>
+     <x>366</x>
+     <y>24</y>
+     <width>50</width>
+     <height>28</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Inter 18pt</family>
+    </font>
+   </property>
+   <property name="minimum">
+    <number>1</number>
+   </property>
+   <property name="maximum">
+    <number>31</number>
+   </property>
+  </widget>
+  <widget class="QLabel" name="text_date1">
+   <property name="geometry">
+    <rect>
+     <x>421</x>
+     <y>20</y>
+     <width>20</width>
+     <height>36</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Inter 18pt</family>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>일</string>
+   </property>
+   <property name="margin">
+    <number>0</number>
+   </property>
+  </widget>
+  <widget class="QLabel" name="range1">
+   <property name="geometry">
+    <rect>
+     <x>451</x>
+     <y>20</y>
+     <width>20</width>
+     <height>36</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Inter 18pt</family>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>~</string>
+   </property>
+   <property name="margin">
+    <number>0</number>
+   </property>
+  </widget>
+  <widget class="QSpinBox" name="year2">
+   <property name="geometry">
+    <rect>
+     <x>471</x>
+     <y>24</y>
+     <width>80</width>
+     <height>28</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Inter 18pt</family>
+    </font>
+   </property>
+   <property name="minimum">
+    <number>2020</number>
+   </property>
+   <property name="maximum">
+    <number>2030</number>
+   </property>
+  </widget>
+  <widget class="QLabel" name="text_year2">
+   <property name="geometry">
+    <rect>
+     <x>556</x>
+     <y>20</y>
+     <width>20</width>
+     <height>36</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Inter 18pt</family>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>년</string>
+   </property>
+   <property name="margin">
+    <number>0</number>
+   </property>
+  </widget>
+  <widget class="QSpinBox" name="month2">
+   <property name="geometry">
+    <rect>
+     <x>576</x>
+     <y>24</y>
+     <width>50</width>
+     <height>28</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Inter 18pt</family>
+    </font>
+   </property>
+   <property name="minimum">
+    <number>1</number>
+   </property>
+   <property name="maximum">
+    <number>12</number>
+   </property>
+  </widget>
+  <widget class="QLabel" name="text_month2">
+   <property name="geometry">
+    <rect>
+     <x>631</x>
+     <y>20</y>
+     <width>20</width>
+     <height>36</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Inter 18pt</family>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>월</string>
+   </property>
+   <property name="margin">
+    <number>0</number>
+   </property>
+  </widget>
+  <widget class="QSpinBox" name="date2">
+   <property name="geometry">
+    <rect>
+     <x>651</x>
+     <y>24</y>
+     <width>50</width>
+     <height>28</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Inter 18pt</family>
+    </font>
+   </property>
+   <property name="minimum">
+    <number>1</number>
+   </property>
+   <property name="maximum">
+    <number>31</number>
+   </property>
+  </widget>
+  <widget class="QLabel" name="text_date2">
+   <property name="geometry">
+    <rect>
+     <x>706</x>
+     <y>20</y>
+     <width>20</width>
+     <height>36</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Inter 18pt</family>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>일</string>
+   </property>
+   <property name="margin">
+    <number>0</number>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="search_btn">
+   <property name="geometry">
+    <rect>
+     <x>1160</x>
+     <y>20</y>
+     <width>70</width>
+     <height>36</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Inter 18pt</family>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>검색</string>
+   </property>
+  </widget>
   <zorder>filter_bg</zorder>
   <zorder>toggle_bg</zorder>
   <zorder>text1</zorder>
@@ -457,9 +704,6 @@
   <zorder>toggle3</zorder>
   <zorder>text2</zorder>
   <zorder>text3</zorder>
-  <zorder>date1</zorder>
-  <zorder>range1</zorder>
-  <zorder>date2</zorder>
   <zorder>checkbox1</zorder>
   <zorder>checkbox2</zorder>
   <zorder>checkbox3</zorder>
@@ -471,6 +715,20 @@
   <zorder>radio2</zorder>
   <zorder>radio3</zorder>
   <zorder>detect_table</zorder>
+  <zorder>year1</zorder>
+  <zorder>text_year1</zorder>
+  <zorder>month1</zorder>
+  <zorder>text_month1</zorder>
+  <zorder>date1</zorder>
+  <zorder>text_date1</zorder>
+  <zorder>range1</zorder>
+  <zorder>year2</zorder>
+  <zorder>text_year2</zorder>
+  <zorder>month2</zorder>
+  <zorder>text_month2</zorder>
+  <zorder>date2</zorder>
+  <zorder>text_date2</zorder>
+  <zorder>search_btn</zorder>
  </widget>
  <resources/>
  <connections/>
