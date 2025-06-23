@@ -105,10 +105,10 @@ def extract_joints(frame, pose_model):
         print(f"Error processing frame: {e}")
         return np.zeros(17 * 4), None
 
-def draw_predictions(frame, probs, current_prediction, fps=None):
+def draw_predictions(frame, probs, current_prediction, fps=None, delay=None):
     """프레임에 예측 결과를 왼쪽 위에 표시"""
     overlay = frame.copy()
-    cv2.rectangle(overlay, (10, 10), (350, 200), (0, 0, 0), -1)
+    cv2.rectangle(overlay, (10, 10), (350, 220), (0, 0, 0), -1)
     cv2.addWeighted(overlay, 0.7, frame, 0.3, 0, frame)
     label_names = ["Normal", "Theft", "Abandon", "Broken"]
     cv2.putText(frame, f"Prediction: {label_names[current_prediction]}", 
@@ -124,15 +124,93 @@ def draw_predictions(frame, probs, current_prediction, fps=None):
             color = (200, 200, 200)
             cv2.putText(frame, f"{label}: {prob:.3f}", 
                         (20, y_offset + i * 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
+    
+    if delay:
+        cv2.putText(frame, delay, (20, 180), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 1)
+
     return frame
 
 def draw_keypoints(frame, keypoints):
-    """프레임에 관절점 시각화"""
+    """프레임에 관절점 시각화 및 선으로 연결"""
     if keypoints is not None:
+        # 관절점 그리기
         for kp in keypoints[:17]:
-            if len(kp) >= 3 and kp[2] > 0.1: # confidence > 0.1
+            if len(kp) >= 3 and kp[2] > 0.1:  # confidence > 0.1
                 x, y = int(kp[0]), int(kp[1])
                 cv2.circle(frame, (x, y), 5, (0, 255, 0), -1)
+        
+        # 관절점 연결 (COCO 포맷 기준)
+        # 팔 연결
+        limb_connections = [
+            # 얼굴 연결
+            (0, 1), (0, 2), (1, 3), (2, 4),  # 얼굴(눈, 귀)
+            (0, 5), (0, 6),  # 어깨
+            # 팔 연결
+            (5, 7), (7, 9), (6, 8), (8, 10),  # 팔
+            # 몸통 연결
+            (5, 6), (5, 11), (6, 12), (11, 12),  # 몸통
+            # 다리 연결
+            (11, 13), (13, 15), (12, 14), (14, 16)  # 다리
+        ]
+        
+        # 관절점 연결선 그리기
+        for connection in limb_connections:
+            idx1, idx2 = connection
+            if (len(keypoints[idx1]) >= 3 and keypoints[idx1][2] > 0.1 and
+                len(keypoints[idx2]) >= 3 and keypoints[idx2][2] > 0.1):
+                pt1 = (int(keypoints[idx1][0]), int(keypoints[idx1][1]))
+                pt2 = (int(keypoints[idx2][0]), int(keypoints[idx2][1]))
+                cv2.line(frame, pt1, pt2, (0, 255, 255), 2)
+        
+        # 전체 사람 바운딩 박스 그리기
+        valid_points = []
+        for kp in keypoints[:17]:
+            if len(kp) >= 3 and kp[2] > 0.1:
+                valid_points.append((int(kp[0]), int(kp[1])))
+        
+        if valid_points:
+            x_coords = [p[0] for p in valid_points]
+            y_coords = [p[1] for p in valid_points]
+            
+            # 전체 사람 바운딩 박스
+            x_min, x_max = min(x_coords), max(x_coords)
+            y_min, y_max = min(y_coords), max(y_coords)
+            
+            # 패딩 추가 (10%)
+            width = x_max - x_min
+            height = y_max - y_min
+            x_min = max(0, x_min - int(width * 0.1))
+            y_min = max(0, y_min - int(height * 0.1))
+            x_max = min(frame.shape[1], x_max + int(width * 0.1))
+            y_max = min(frame.shape[0], y_max + int(height * 0.1))
+            
+            # 사람 전체 바운딩 박스 그리기 (파란색)
+            cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (255, 0, 0), 2)
+            
+            # 얼굴 바운딩 박스 그리기 (빨간색)
+            face_keypoints = []
+            for idx in [0, 1, 2, 3, 4]:  # 얼굴 관련 키포인트 (코, 눈, 귀)
+                if len(keypoints[idx]) >= 3 and keypoints[idx][2] > 0.1:
+                    face_keypoints.append((int(keypoints[idx][0]), int(keypoints[idx][1])))
+            
+            if face_keypoints:
+                face_x_coords = [p[0] for p in face_keypoints]
+                face_y_coords = [p[1] for p in face_keypoints]
+                
+                face_x_min, face_x_max = min(face_x_coords), max(face_x_coords)
+                face_y_min, face_y_max = min(face_y_coords), max(face_y_coords)
+                
+                # 얼굴 패딩 추가 (20%)
+                face_width = face_x_max - face_x_min
+                face_height = face_y_max - face_y_min
+                face_x_min = max(0, face_x_min - int(face_width * 0.2))
+                face_y_min = max(0, face_y_min - int(face_height * 0.2))
+                face_x_max = min(frame.shape[1], face_x_max + int(face_width * 0.2))
+                face_y_max = min(frame.shape[0], face_y_max + int(face_height * 0.2))
+                
+                # 얼굴 바운딩 박스 그리기 (빨간색)
+                cv2.rectangle(frame, (face_x_min, face_y_min), (face_x_max, face_y_max), (0, 0, 255), 2)
+    
     return frame
 
 def setup_udp_socket(udp_ip, udp_port):
@@ -179,15 +257,16 @@ def receive_frame_udp_packetized(sock):
     try:
         data, addr = sock.recvfrom(65536)
         
-        if len(data) < 16:
+        if len(data) < 24: # 헤더 크기 변경: 8(double) + 4*4 = 24
             return None
         
-        # 패킷 헤더 파싱: [frame_id(4bytes), packet_idx(4bytes), num_packets(4bytes), data_size(4bytes)]
-        header = data[:16]
-        frame_id, packet_idx, num_packets, data_size = struct.unpack('!IIII', header)
-        packet_data = data[16:16+data_size]
+        # 패킷 헤더 파싱: [timestamp(8bytes), frame_id(4bytes), packet_idx(4bytes), num_packets(4bytes), data_size(4bytes)]
+        header = data[:24]
+        timestamp, frame_id, packet_idx, num_packets, data_size = struct.unpack('!dIIII', header)
+        packet_data = data[24:24+data_size]
         
         return {
+            'timestamp': timestamp,
             'frame_id': frame_id,
             'packet_idx': packet_idx,
             'num_packets': num_packets,
@@ -220,9 +299,7 @@ def realtime_anomaly_detection(model_path,  # model_path를 필수로 받도록 
     joints_sequence = deque(maxlen=sequence_length)
     print("Starting real-time anomaly detection from UDP stream at 5fps...")
     print("Press 'q' to quit, 'r' to reset sequence")
-    fps = 5
-    frame_interval = 1.0 / fps
-    last_frame_time = time.time()
+    
     video_buffer = deque(maxlen=45)  # 9초 전까지의 프레임 저장 (5fps * 9초)
     pred_buffer = deque(maxlen=7)
     saving = False
@@ -238,11 +315,6 @@ def realtime_anomaly_detection(model_path,  # model_path를 필수로 받도록 
     
     try:
         while True:
-            current_time = time.time()
-            if current_time - last_frame_time < frame_interval:
-                continue
-            last_frame_time = current_time
-
             current_prediction = None
 
             # UDP로 패킷 수신
@@ -258,12 +330,13 @@ def realtime_anomaly_detection(model_path,  # model_path를 필수로 받도록 
             
             # 프레임 버퍼에 패킷 추가
             if frame_id not in frame_buffers:
-                frame_buffers[frame_id] = {'num_packets': num_packets, 'packets': {}}
+                frame_buffers[frame_id] = {'num_packets': num_packets, 'packets': {}, 'timestamp': packet_info['timestamp']}
             
             frame_buffers[frame_id]['packets'][packet_idx] = packet_data
             
             # 모든 패킷이 수신되었는지 확인
             if len(frame_buffers[frame_id]['packets']) == num_packets:
+                original_timestamp = frame_buffers[frame_id]['timestamp']
                 complete_frame_data = reassemble_frame(frame_id, frame_buffers[frame_id])
                 
                 if complete_frame_data:
@@ -275,6 +348,13 @@ def realtime_anomaly_detection(model_path,  # model_path를 필수로 받도록 
                         del frame_buffers[frame_id]
                         continue
                     
+                    # 딜레이 계산 및 표시
+                    delay = time.time() - original_timestamp
+                    delay_text = f"Delay: {delay*1000:.2f} ms"
+                    
+                    # 버그 수정을 위해 probs를 기본값으로 초기화
+                    probs = np.array([1.0, 0.0, 0.0, 0.0])
+
                     # 이상 감지 로직
                     joints, keypoints = extract_joints(frame, pose_model)
                     has_person = False
@@ -300,7 +380,7 @@ def realtime_anomaly_detection(model_path,  # model_path를 필수로 받도록 
                             else:
                                 current_prediction = 0  # Normal로 분류
                             
-                            frame = draw_predictions(frame, probs, current_prediction, None)
+                            frame = draw_predictions(frame, probs, current_prediction, None, delay_text)
                             joints_sequence.popleft()
                         else:
                             remaining = sequence_length - len(joints_sequence)
@@ -325,7 +405,7 @@ def realtime_anomaly_detection(model_path,  # model_path를 필수로 받도록 
                             pred_buffer.clear()
                         pred_buffer.append(current_prediction)
                         prev_prediction = current_prediction
-                        frame = draw_predictions(frame, probs, current_prediction, None)
+                        frame = draw_predictions(frame, probs, current_prediction, None, delay_text)
                     if (
                         len(pred_buffer) == 7 and
                         len(set(pred_buffer)) == 1 and
@@ -380,7 +460,10 @@ def realtime_anomaly_detection(model_path,  # model_path를 필수로 받도록 
                             
                             last_saved_action = None
                             clip_predictions = []
-                    send_frame_tcp(frame)
+                    
+                    frame = draw_keypoints(frame, keypoints)
+                    cv2.imshow('AI Server Feed', frame)
+                    # send_frame_tcp(frame)
                 
                 # 완성된 프레임 버퍼 삭제
                 del frame_buffers[frame_id]
