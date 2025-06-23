@@ -220,9 +220,7 @@ def realtime_anomaly_detection(model_path,  # model_path를 필수로 받도록 
     joints_sequence = deque(maxlen=sequence_length)
     print("Starting real-time anomaly detection from UDP stream at 5fps...")
     print("Press 'q' to quit, 'r' to reset sequence")
-    fps = 5
-    frame_interval = 1.0 / fps
-    last_frame_time = time.time()
+    
     video_buffer = deque(maxlen=45)  # 9초 전까지의 프레임 저장 (5fps * 9초)
     pred_buffer = deque(maxlen=7)
     saving = False
@@ -238,11 +236,6 @@ def realtime_anomaly_detection(model_path,  # model_path를 필수로 받도록 
     
     try:
         while True:
-            current_time = time.time()
-            if current_time - last_frame_time < frame_interval:
-                continue
-            last_frame_time = current_time
-
             current_prediction = None
 
             # UDP로 패킷 수신
@@ -380,7 +373,9 @@ def realtime_anomaly_detection(model_path,  # model_path를 필수로 받도록 
                             
                             last_saved_action = None
                             clip_predictions = []
-                    send_frame_tcp(frame)
+                    
+                    cv2.imshow('AI Server Feed', frame)
+                    # send_frame_tcp(frame)
                 
                 # 완성된 프레임 버퍼 삭제
                 del frame_buffers[frame_id]

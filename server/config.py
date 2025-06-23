@@ -3,10 +3,10 @@ import socket
 # 로컬 머신의 IP 주소 가져오기
 local_ip = socket.gethostbyname(socket.gethostname())
 
-# wonho_pc = "192.168.0.15" # 원호 pc  
-# chaeyeon_pc = "192.168.0.21" # 채연 pc
-wonho_pc = local_ip # 원호 pc  
-chaeyeon_pc = local_ip # 채연 pc
+wonho_pc = "192.168.0.15" # 원호 pc  
+chaeyeon_pc = "192.168.0.21" # 채연 pc
+# wonho_pc = local_ip # 원호 pc  
+# chaeyeon_pc = local_ip # 채연 pc
 
 AI_IP = chaeyeon_pc # AI 서버 IP
 AI_PORT = 5005
