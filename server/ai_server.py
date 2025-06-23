@@ -95,11 +95,6 @@ def extract_joints(frame, pose_model):
         if results.keypoints is not None and len(results.keypoints) > 0:
             keypoints = results.keypoints.data.cpu().numpy()  # [num_people, 17, 3] 형태
             
-            # 디버깅: 키포인트 형태 출력
-            if len(keypoints) > 0:
-                print(f"키포인트 배열 형태: {keypoints.shape}")
-                print(f"첫 번째 사람의 첫 번째 키포인트: {keypoints[0][0]}")
-            
             joints = np.zeros(17 * 4)
             for i, kp in enumerate(keypoints[0][:17]):  # 첫 번째 사람의 관절점만 사용
                 if i < 17:
@@ -141,9 +136,6 @@ def draw_keypoints(frame, keypoints):
     if keypoints is None or len(keypoints) == 0:
         return frame
         
-    # 디버깅: 키포인트 정보 출력
-    print(f"draw_keypoints 함수 - keypoints 배열 형태: {keypoints.shape}")
-    
     # 관절점 연결 (COCO 포맷 기준)
     limb_connections = [
         # 얼굴 연결
@@ -161,12 +153,6 @@ def draw_keypoints(frame, keypoints):
     for person_idx in range(len(keypoints)):
         person_kps = keypoints[person_idx]
         
-        # 디버깅: 이 사람의 키포인트 정보 출력
-        valid_keypoints_count = sum(1 for kp in person_kps if float(kp[2]) > 0.1)
-        print(f"사람 {person_idx} - 유효한 키포인트 수: {valid_keypoints_count}")
-        if valid_keypoints_count > 0:
-            print(f"첫 번째 유효한 키포인트 위치: {next((kp[:2] for kp in person_kps if float(kp[2]) > 0.1), None)}")
-        
         # 관절점 그리기
         for kp_idx in range(len(person_kps)):
             if kp_idx < 17:  # 17개 키포인트만 처리
@@ -175,9 +161,6 @@ def draw_keypoints(frame, keypoints):
                 if conf > 0.1:  # confidence > 0.1
                     x, y = int(kp[0]), int(kp[1])
                     cv2.circle(frame, (x, y), 5, (0, 255, 0), -1)
-                    # 키포인트 번호 표시
-                    cv2.putText(frame, f"{kp_idx}", (x+5, y-5), 
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
         
         # 관절점 연결선 그리기 - 신뢰도 기준 상향 조정
         for connection in limb_connections:
@@ -407,15 +390,22 @@ def realtime_anomaly_detection(model_path,  # model_path를 필수로 받도록 
                     person_count = 0
                     has_person = False
                     
-                    # YOLOv8 pose 모델 결과에서 사람 수 추출
-                    if hasattr(pose_model, 'results') and pose_model.results:
-                        try:
-                            # 최신 결과에서 사람 수 가져오기
-                            results = pose_model.results[-1]
-                            if results and hasattr(results, 'keypoints') and results.keypoints is not None:
-                                person_count = len(results.keypoints)
-                        except (IndexError, AttributeError) as e:
-                            print(f"사람 수 계산 중 오류: {e}")
+                    # 유효한 사람만 카운트 (최소 8개 이상의 신뢰도 높은 키포인트가 있는 사람)
+                    if keypoints is not None and len(keypoints) > 0:
+                        print(f"Current frame keypoints shape: {keypoints.shape}")
+                        
+                        for person_idx in range(len(keypoints)):
+                            valid_keypoints = 0
+                            for kp_idx in range(len(keypoints[person_idx])):
+                                if kp_idx < 17 and float(keypoints[person_idx][kp_idx][2]) > 0.2:
+                                    valid_keypoints += 1
+                            
+                            # 더 엄격한 기준 적용: 최소 8개 이상의 유효한 키포인트가 있어야 사람으로 인정
+                            if valid_keypoints >= 8:
+                                person_count += 1
+                                print(f"Current frame: Person {person_idx} detected with {valid_keypoints} valid keypoints")
+                        
+                        print(f"Current frame person count: {person_count}")
                     
                     # 프레임에 사람 수 표시
                     cv2.putText(frame, f"Persons: {person_count}", 
@@ -424,6 +414,7 @@ def realtime_anomaly_detection(model_path,  # model_path를 필수로 받도록 
                     # 클립 저장 중이면 최대 사람 수 업데이트
                     if saving and person_count > current_clip_max_persons:
                         current_clip_max_persons = person_count
+                        print(f"Updated max person count to {current_clip_max_persons} (current frame)")
                     
                     # 전체 최대 사람 수 업데이트
                     if person_count > max_person_count:
@@ -509,14 +500,72 @@ def realtime_anomaly_detection(model_path,  # model_path를 필수로 받도록 
                         
                         if out.isOpened():
                             print(f"Started saving clip: {filename}")
-                            for pre_frame in pre_buffer_frames:
-                                out.write(pre_frame)
+                            # 이상 행위 시작 전 프레임들에도 시각화 적용
+                            for i, pre_frame in enumerate(pre_buffer_frames):
+                                # 시각화 적용 - 각 프레임마다 새로운 키포인트 추출
+                                vis_frame = pre_frame.copy()
+                                
+                                # 각 프레임마다 키포인트 추출 및 시각화 적용
+                                try:
+                                    # 이 프레임에 대한 키포인트 추출
+                                    pre_joints, pre_keypoints = extract_joints(vis_frame, pose_model)
+                                    
+                                    # 이 프레임의 사람 수 계산
+                                    pre_person_count = 0
+                                    if pre_keypoints is not None and len(pre_keypoints) > 0:
+                                        # 디버깅: 키포인트 정보 출력
+                                        print(f"Pre-frame keypoints shape: {pre_keypoints.shape}")
+                                        
+                                        for person_idx in range(len(pre_keypoints)):
+                                            valid_keypoints = 0
+                                            for kp_idx in range(len(pre_keypoints[person_idx])):
+                                                if kp_idx < 17 and float(pre_keypoints[person_idx][kp_idx][2]) > 0.2:
+                                                    valid_keypoints += 1
+                                            
+                                            # 더 엄격한 기준 적용: 최소 8개 이상의 유효한 키포인트가 있어야 사람으로 인정
+                                            if valid_keypoints >= 8:  
+                                                pre_person_count += 1
+                                                print(f"Person {person_idx} detected with {valid_keypoints} valid keypoints")
+                                        
+                                        print(f"Pre-frame person count: {pre_person_count}")
+                                    
+                                    # 클립 내 최대 사람 수 업데이트
+                                    if pre_person_count > current_clip_max_persons:
+                                        current_clip_max_persons = pre_person_count
+                                        print(f"Updated max person count to {current_clip_max_persons}")
+                                    
+                                    # 키포인트 및 바운딩 박스 시각화
+                                    if pre_keypoints is not None:
+                                        vis_frame = draw_keypoints(vis_frame, pre_keypoints)
+                                except Exception as e:
+                                    print(f"Pre-buffer frame processing error: {e}")
+                                
+                                # 이전 프레임이므로 "Recording..." 텍스트 추가
+                                # 화면 오른쪽 상단에 배치
+                                text = f"Recording... (pre-buffer {i+1}/{len(pre_buffer_frames)})"
+                                text_size = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)[0]
+                                text_x = vis_frame.shape[1] - text_size[0] - 20  # 오른쪽 정렬, 여백 20px
+                                cv2.putText(vis_frame, text, 
+                                            (text_x, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+                                out.write(vis_frame)
                         else:
                             print(f"Failed to open video writer for {filename}")
                             saving = False
                     
+                    # 키포인트 및 바운딩 박스 시각화 적용
+                    frame = draw_keypoints(frame, keypoints)
+                    
                     if saving:
+                        # 녹화 중임을 표시 - 오른쪽 상단에 배치
+                        text = "Recording..."
+                        text_size = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)[0]
+                        text_x = frame.shape[1] - text_size[0] - 20  # 오른쪽 정렬, 여백 20px
+                        cv2.putText(frame, text, 
+                                    (text_x, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+                        cv2.circle(frame, (frame.shape[1] - 30, 30), 15, (0, 0, 255), -1)  # 빨간 녹화 표시
+                        
                         if out and out.isOpened():
+                            # 시각화가 적용된 프레임을 저장
                             out.write(frame)
 
                         if current_prediction is not None:
@@ -536,7 +585,7 @@ def realtime_anomaly_detection(model_path,  # model_path를 필수로 받도록 
                                 new_filename = f"{action_name}_p{current_clip_max_persons}_{dt_str}.mp4"
                                 if filename and os.path.exists(filename):
                                     os.rename(filename, new_filename)
-                                    print(f"Clip saved: {new_filename} (Max persons: {current_clip_max_persons})")
+                                    print(f"Clip saved: {new_filename}")
                             else:
                                 if filename and os.path.exists(filename):
                                     os.remove(filename)
@@ -546,7 +595,6 @@ def realtime_anomaly_detection(model_path,  # model_path를 필수로 받도록 
                             clip_predictions = []
                             current_clip_max_persons = 0  # 클립 저장 후 사람 수 초기화
                     
-                    frame = draw_keypoints(frame, keypoints)
                     cv2.imshow('AI Server Feed', frame)
                     # send_frame_tcp(frame)
                 
