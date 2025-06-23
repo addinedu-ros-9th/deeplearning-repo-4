@@ -1,4 +1,6 @@
 from flask import Blueprint, request, jsonify
+from services import auth_service
+from utils.response_utils import success_response, error_response
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -6,13 +8,16 @@ bp = Blueprint('auth', __name__, url_prefix='/auth')
 def login():
     """IF-01: 로그인"""
     data = request.get_json()
+    if not data or 'user_id' not in data:
+        return error_response("user_id is required", 400)
+
     user_id = data.get('user_id')
 
-    # TODO: 사용자 인증 로직 구현 (services/auth_service.py 호출)
-    if user_id:
-        print(f"로그인 시도: {user_id}")
+    is_verified = auth_service.verify_user(user_id)
+
+    if is_verified:
         # 성공 시
-        return jsonify({"message": "Login successful"}), 200
+        return success_response("Login successful")
     else:
         # 실패 시
-        return jsonify({"message": "Invalid credentials"}), 401 
+        return error_response("Invalid credentials", 404) 

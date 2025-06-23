@@ -587,7 +587,7 @@ def realtime_anomaly_detection(model_path, pose_model_path='yolov8n-pose.pt', se
                             current_clip_max_persons = 0  # 클립 저장 후 사람 수 초기화
                     
                     cv2.imshow('AI Server Feed', frame)
-                    # send_frame_tcp(frame)
+                    send_frame_tcp(frame)
                 
                 # 완성된 프레임 버퍼 삭제
                 del frame_buffers[frame_id]

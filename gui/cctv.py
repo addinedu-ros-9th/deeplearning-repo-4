@@ -33,7 +33,7 @@ class CCTVWidget(QWidget):
         
         # 네트워크 연결 설정
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.connect((CENTRAL_IP, 6006))
+        self.sock.connect((CENTRAL_IP, 7007))
         # self.sock.connect(('192.168.0.21', 7007))
         self.sock.settimeout(0.1)
         # self.cap = cv2.VideoCapture(0) # 웹캠
