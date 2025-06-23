@@ -20,7 +20,7 @@ import json
 from config import RECIEVER_IP, RECIEVER_PORT, CENTRAL_IP, CENTRAL_PORT
 
 # GUI UDP 통신을 위한 설정 추가
-GUI_UDP_IP = "127.0.0.1"  # GUI IP 주소
+GUI_UDP_IP = CENTRAL_IP  # GUI IP 주소
 GUI_UDP_PORT = 5006  # GUI UDP 포트
 
 # ai_server.py가 있는 디렉토리의 부모 디렉토리를 경로에 추가
