@@ -24,8 +24,8 @@ class CCTVWidget(QWidget):
         super().__init__(parent)
         loadUi("cctv.ui", self)
         self.setObjectName("cctvWidget") 
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.SubWindow)
-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        # self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.SubWindow)
+        # self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.title.setText("GS25 금천점")
         self.comboBox.setStyleSheet("")
         
