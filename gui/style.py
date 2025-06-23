@@ -28,6 +28,7 @@ def apply_style(app):
                  "component/table.qss",
                  "component/scrollbar.qss",
                  "contents/cctv.qss",
+                 "contents/dashboard.qss",
                  "contents/detect_log.qss"]
     style = ""
     for file in qss_files:
