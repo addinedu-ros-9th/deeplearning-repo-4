@@ -76,7 +76,7 @@ class DetectLogWidget(QWidget):
         self.radio3.setProperty("class", "radiobox")
         self.radio1.setChecked(True) 
         self.detect_table.setProperty("class", "table") 
-        self.search_btn.setProperty("class", "btn outlined primary") # 검색 버튼
+        self.search_btn.setProperty("class", "btn outlined primary weight700") # 검색 버튼
 
         # human_min 값 변경 시 이벤트 연결
         self.human_min.valueChanged.connect(self.on_human_min_changed)
