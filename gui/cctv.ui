@@ -25,6 +25,7 @@
    <property name="font">
     <font>
      <family>Inter 18pt</family>
+     <weight>75</weight>
      <bold>true</bold>
     </font>
    </property>
@@ -38,7 +39,7 @@
      <x>20</x>
      <y>75</y>
      <width>860</width>
-     <height>645</height>
+     <height>484</height>
     </rect>
    </property>
    <property name="text">
@@ -70,6 +71,7 @@
    <property name="font">
     <font>
      <family>Inter 18pt</family>
+     <weight>75</weight>
      <bold>true</bold>
     </font>
    </property>
