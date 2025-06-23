@@ -12,8 +12,8 @@ cap = cv2.VideoCapture(0)
 
 # record.py와 동일한 카메라 설정
 cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))  # MJPEG 포맷 강제
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 860)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 645)
 
 if not cap.isOpened():
     print("웹캠을 열 수 없습니다.")
@@ -30,7 +30,7 @@ last_frame_time = time.time()
 frame_id = 0
 
 def send_frame_in_packets(frame_data, frame_id):
-    """프레임을 여러 패킷으로 분할하여 전송 (1920x1080 지원)"""
+    """프레임을 여러 패킷으로 분할하여 전송"""
     total_size = len(frame_data)
     num_packets = (total_size + MAX_PACKET_SIZE - 1) // MAX_PACKET_SIZE
     
@@ -98,13 +98,10 @@ while True:
             print("프레임을 읽을 수 없습니다.")
             break
         
-        frame = crop_center(frame, 1920, 1080)
+        frame = crop_center(frame, 720, 540)
 
-        # 프레임을 JPEG로 인코딩 (1920x1080 지원을 위한 품질 조정)
-        result, imgencode = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 75])
-        if not result:
-            print("JPEG 인코딩 실패")
-            continue
+        # 프레임을 JPEG로 인코딩 (원본 해상도 유지)
+        result, imgencode = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
         data = imgencode.tobytes()
         
         # 프레임을 여러 패킷으로 분할하여 전송
