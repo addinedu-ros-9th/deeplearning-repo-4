@@ -33,8 +33,6 @@ class MainApp(QMainWindow):
         self.central_widget.addWidget(self.login_window)
         self.central_widget.addWidget(self.layout_window)
 
-        self.user_info = None # 사용자 ID 초기화
-
         # 로그인 성공 시 LayoutWindow로 전환
         self.login_window.login_successful.connect(self.show_layout_window)
         self.layout_window.logout_successful.connect(self.show_login_window)
@@ -42,15 +40,12 @@ class MainApp(QMainWindow):
         # 초기 화면 설정
         self.central_widget.setCurrentWidget(self.login_window)
 
-    def show_layout_window(self, user_info):
+    def show_layout_window(self):
         # LayoutWindow로 화면 전환
-        self.user_info = user_info
-        self.layout_window.set_user_info(user_info)
         self.central_widget.setCurrentWidget(self.layout_window)
 
     def show_login_window(self):
         # LoginWindow로 화면 전환
-        self.user_id = None
         self.central_widget.setCurrentWidget(self.login_window)
 
 

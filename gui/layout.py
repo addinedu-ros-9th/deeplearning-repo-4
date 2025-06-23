@@ -7,6 +7,8 @@ from PyQt6.QtGui import *
 from PyQt6.QtCore import *
 from PyQt6.QtWidgets import *
 
+from modules.user_info import user_info
+
 from cctv import CCTVWidget
 from dashboard import DashboardWidget
 from detect_log import DetectLogWidget
@@ -34,8 +36,10 @@ class UserPopover(QWidget):
         self.setObjectName("userPopover") 
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Popup)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-
-        self.user_info = None 
+        
+        if user_info is not None and len(user_info) >= 2:
+            self.userId.setText(str(user_info[0]))
+            self.userEmail.setText(str(user_info[1]))
 
         self.logoutBtn.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.logoutBtn.clicked.connect(self.close)
@@ -47,10 +51,6 @@ class UserPopover(QWidget):
         self.move(pos)
         self.show()
 
-    def set_user_info(self, user_info):
-        self.user_info = user_info
-        self.userId.setText(user_info['name'])
-        self.userEmail.setText(user_info['email'])
 
 class LayoutWindow(QMainWindow):
     logout_successful = pyqtSignal()
@@ -138,11 +138,6 @@ class LayoutWindow(QMainWindow):
         self.cctv_widget.hide()
         self.dashboard_widget.hide()
         self.detect_log_widget.show()
-
-    def set_user_info(self, user_info):
-        self.user_info = user_info
-        self.userBtn.setText(user_info['user_id'])
-        self.user_popover.set_user_info(user_info)
 
     def handle_logout2(self):
         """로그아웃 처리"""
