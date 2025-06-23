@@ -93,9 +93,15 @@ def extract_joints(frame, pose_model):
     try:
         results = pose_model(frame, verbose=False)[0]
         if results.keypoints is not None and len(results.keypoints) > 0:
-            keypoints = results.keypoints[0].data[0].cpu().numpy()
+            keypoints = results.keypoints.data.cpu().numpy()  # [num_people, 17, 3] 형태
+            
+            # 디버깅: 키포인트 형태 출력
+            if len(keypoints) > 0:
+                print(f"키포인트 배열 형태: {keypoints.shape}")
+                print(f"첫 번째 사람의 첫 번째 키포인트: {keypoints[0][0]}")
+            
             joints = np.zeros(17 * 4)
-            for i, kp in enumerate(keypoints):
+            for i, kp in enumerate(keypoints[0][:17]):  # 첫 번째 사람의 관절점만 사용
                 if i < 17:
                     joints[i*4:(i+1)*4] = [kp[0]/256, kp[1]/256, 0.0, kp[2]]
             return joints, keypoints
@@ -132,43 +138,73 @@ def draw_predictions(frame, probs, current_prediction, fps=None, delay=None):
 
 def draw_keypoints(frame, keypoints):
     """프레임에 관절점 시각화 및 선으로 연결"""
-    if keypoints is not None:
-        # 관절점 그리기
-        for kp in keypoints[:17]:
-            if len(kp) >= 3 and kp[2] > 0.1:  # confidence > 0.1
-                x, y = int(kp[0]), int(kp[1])
-                cv2.circle(frame, (x, y), 5, (0, 255, 0), -1)
+    if keypoints is None or len(keypoints) == 0:
+        return frame
         
-        # 관절점 연결 (COCO 포맷 기준)
+    # 디버깅: 키포인트 정보 출력
+    print(f"draw_keypoints 함수 - keypoints 배열 형태: {keypoints.shape}")
+    
+    # 관절점 연결 (COCO 포맷 기준)
+    limb_connections = [
+        # 얼굴 연결
+        (0, 1), (0, 2), (1, 3), (2, 4),  # 얼굴(눈, 귀)
+        (0, 5), (0, 6),  # 어깨
         # 팔 연결
-        limb_connections = [
-            # 얼굴 연결
-            (0, 1), (0, 2), (1, 3), (2, 4),  # 얼굴(눈, 귀)
-            (0, 5), (0, 6),  # 어깨
-            # 팔 연결
-            (5, 7), (7, 9), (6, 8), (8, 10),  # 팔
-            # 몸통 연결
-            (5, 6), (5, 11), (6, 12), (11, 12),  # 몸통
-            # 다리 연결
-            (11, 13), (13, 15), (12, 14), (14, 16)  # 다리
-        ]
+        (5, 7), (7, 9), (6, 8), (8, 10),  # 팔
+        # 몸통 연결
+        (5, 6), (5, 11), (6, 12), (11, 12),  # 몸통
+        # 다리 연결
+        (11, 13), (13, 15), (12, 14), (14, 16)  # 다리
+    ]
+    
+    # 각 사람별로 처리
+    for person_idx in range(len(keypoints)):
+        person_kps = keypoints[person_idx]
         
-        # 관절점 연결선 그리기
+        # 디버깅: 이 사람의 키포인트 정보 출력
+        valid_keypoints_count = sum(1 for kp in person_kps if float(kp[2]) > 0.1)
+        print(f"사람 {person_idx} - 유효한 키포인트 수: {valid_keypoints_count}")
+        if valid_keypoints_count > 0:
+            print(f"첫 번째 유효한 키포인트 위치: {next((kp[:2] for kp in person_kps if float(kp[2]) > 0.1), None)}")
+        
+        # 관절점 그리기
+        for kp_idx in range(len(person_kps)):
+            if kp_idx < 17:  # 17개 키포인트만 처리
+                kp = person_kps[kp_idx]
+                conf = float(kp[2])  # 신뢰도를 float로 변환
+                if conf > 0.1:  # confidence > 0.1
+                    x, y = int(kp[0]), int(kp[1])
+                    cv2.circle(frame, (x, y), 5, (0, 255, 0), -1)
+                    # 키포인트 번호 표시
+                    cv2.putText(frame, f"{kp_idx}", (x+5, y-5), 
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
+        
+        # 관절점 연결선 그리기 - 신뢰도 기준 상향 조정
         for connection in limb_connections:
             idx1, idx2 = connection
-            if (len(keypoints[idx1]) >= 3 and keypoints[idx1][2] > 0.1 and
-                len(keypoints[idx2]) >= 3 and keypoints[idx2][2] > 0.1):
-                pt1 = (int(keypoints[idx1][0]), int(keypoints[idx1][1]))
-                pt2 = (int(keypoints[idx2][0]), int(keypoints[idx2][1]))
-                cv2.line(frame, pt1, pt2, (0, 255, 255), 2)
+            if (idx1 < len(person_kps) and idx2 < len(person_kps)):
+                conf1 = float(person_kps[idx1][2])
+                conf2 = float(person_kps[idx2][2])
+                # 신뢰도 기준을 0.2로 상향 조정
+                if conf1 > 0.2 and conf2 > 0.2:
+                    pt1 = (int(person_kps[idx1][0]), int(person_kps[idx1][1]))
+                    pt2 = (int(person_kps[idx2][0]), int(person_kps[idx2][1]))
+                    # 0,0 좌표에 연결되는 것 방지
+                    if pt1[0] > 10 and pt1[1] > 10 and pt2[0] > 10 and pt2[1] > 10:
+                        cv2.line(frame, pt1, pt2, (0, 255, 255), 2)
         
-        # 전체 사람 바운딩 박스 그리기
+        # 바운딩 박스 그리기
         valid_points = []
-        for kp in keypoints[:17]:
-            if len(kp) >= 3 and kp[2] > 0.1:
-                valid_points.append((int(kp[0]), int(kp[1])))
+        for kp_idx in range(len(person_kps)):
+            if kp_idx < 17:
+                conf = float(person_kps[kp_idx][2])
+                if conf > 0.2:  # 신뢰도 기준 상향
+                    x, y = int(person_kps[kp_idx][0]), int(person_kps[kp_idx][1])
+                    # 0,0 근처 좌표 제외
+                    if x > 10 and y > 10:
+                        valid_points.append((x, y))
         
-        if valid_points:
+        if len(valid_points) >= 5:  # 최소 5개 이상의 유효한 점이 있을 때만 바운딩 박스 그리기
             x_coords = [p[0] for p in valid_points]
             y_coords = [p[1] for p in valid_points]
             
@@ -190,10 +226,15 @@ def draw_keypoints(frame, keypoints):
             # 얼굴 바운딩 박스 그리기 (빨간색)
             face_keypoints = []
             for idx in [0, 1, 2, 3, 4]:  # 얼굴 관련 키포인트 (코, 눈, 귀)
-                if len(keypoints[idx]) >= 3 and keypoints[idx][2] > 0.1:
-                    face_keypoints.append((int(keypoints[idx][0]), int(keypoints[idx][1])))
+                if idx < len(person_kps):
+                    conf = float(person_kps[idx][2])
+                    if conf > 0.2:  # 신뢰도 기준 상향
+                        x, y = int(person_kps[idx][0]), int(person_kps[idx][1])
+                        # 0,0 근처 좌표 제외
+                        if x > 10 and y > 10:
+                            face_keypoints.append((x, y))
             
-            if face_keypoints:
+            if len(face_keypoints) >= 2:  # 최소 2개 이상의 얼굴 키포인트가 있을 때만
                 face_x_coords = [p[0] for p in face_keypoints]
                 face_y_coords = [p[1] for p in face_keypoints]
                 
@@ -313,6 +354,10 @@ def realtime_anomaly_detection(model_path,  # model_path를 필수로 받도록 
     pre_buffer_frames = []  # 이상 행위 시작 전 프레임들을 저장
     pre_buffer_size = 15  # 3초 전까지 저장 (5fps * 3초)
     
+    # 사람 수 추적을 위한 변수
+    max_person_count = 0
+    current_clip_max_persons = 0
+    
     try:
         while True:
             current_prediction = None
@@ -357,14 +402,49 @@ def realtime_anomaly_detection(model_path,  # model_path를 필수로 받도록 
 
                     # 이상 감지 로직
                     joints, keypoints = extract_joints(frame, pose_model)
+                    
+                    # 현재 프레임의 사람 수 계산
+                    person_count = 0
+                    has_person = False
+                    
+                    # YOLOv8 pose 모델 결과에서 사람 수 추출
+                    if hasattr(pose_model, 'results') and pose_model.results:
+                        try:
+                            # 최신 결과에서 사람 수 가져오기
+                            results = pose_model.results[-1]
+                            if results and hasattr(results, 'keypoints') and results.keypoints is not None:
+                                person_count = len(results.keypoints)
+                        except (IndexError, AttributeError) as e:
+                            print(f"사람 수 계산 중 오류: {e}")
+                    
+                    # 프레임에 사람 수 표시
+                    cv2.putText(frame, f"Persons: {person_count}", 
+                                (20, 220), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+                    
+                    # 클립 저장 중이면 최대 사람 수 업데이트
+                    if saving and person_count > current_clip_max_persons:
+                        current_clip_max_persons = person_count
+                    
+                    # 전체 최대 사람 수 업데이트
+                    if person_count > max_person_count:
+                        max_person_count = person_count
+                        cv2.putText(frame, f"Max Persons: {max_person_count}", 
+                                    (20, 250), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+                    
                     has_person = False
                     if keypoints is not None:
-                        for kp in keypoints[:17]:
-                            if len(kp) >= 3:
-                                x, y, conf = kp[0], kp[1], kp[2]
-                                if conf > 0.1:
-                                    has_person = True
-                                    cv2.circle(frame, (int(x), int(y)), 3, (0, 255, 0), -1)
+                        # 첫 번째 사람의 키포인트만 처리 (LSTM 모델에 사용)
+                        if len(keypoints) > 0:
+                            person_keypoints = keypoints[0]
+                            for kp_idx in range(len(person_keypoints)):
+                                if kp_idx < 17:  # 17개 키포인트만 처리
+                                    kp = person_keypoints[kp_idx]
+                                    conf_value = float(kp[2])  # 신뢰도를 float로 변환
+                                    if conf_value > 0.1:  # confidence > 0.1
+                                        has_person = True
+                                        x, y = int(kp[0]), int(kp[1])
+                                        cv2.circle(frame, (x, y), 3, (0, 255, 0), -1)
+                    
                     if has_person:
                         joints_sequence.append(joints)
                         if len(joints_sequence) >= sequence_length:
@@ -424,6 +504,9 @@ def realtime_anomaly_detection(model_path,  # model_path를 필수로 받도록 
                         height, width = frame.shape[:2]
                         out = cv2.VideoWriter(filename, fourcc, 5, (width, height))
                         
+                        # 새 클립 시작 시 사람 수 초기화
+                        current_clip_max_persons = person_count
+                        
                         if out.isOpened():
                             print(f"Started saving clip: {filename}")
                             for pre_frame in pre_buffer_frames:
@@ -449,10 +532,11 @@ def realtime_anomaly_detection(model_path,  # model_path를 필수로 받도록 
                             if abnormal_preds:
                                 major_action = Counter(abnormal_preds).most_common(1)[0][0]
                                 action_name = ["Normal", "Theft", "Abandon", "Broken"][major_action]
-                                new_filename = f"{action_name}_{dt_str}.mp4"
+                                # 파일명에 최대 사람 수 추가
+                                new_filename = f"{action_name}_p{current_clip_max_persons}_{dt_str}.mp4"
                                 if filename and os.path.exists(filename):
                                     os.rename(filename, new_filename)
-                                    print(f"Clip saved: {new_filename}")
+                                    print(f"Clip saved: {new_filename} (Max persons: {current_clip_max_persons})")
                             else:
                                 if filename and os.path.exists(filename):
                                     os.remove(filename)
@@ -460,6 +544,7 @@ def realtime_anomaly_detection(model_path,  # model_path를 필수로 받도록 
                             
                             last_saved_action = None
                             clip_predictions = []
+                            current_clip_max_persons = 0  # 클립 저장 후 사람 수 초기화
                     
                     frame = draw_keypoints(frame, keypoints)
                     cv2.imshow('AI Server Feed', frame)

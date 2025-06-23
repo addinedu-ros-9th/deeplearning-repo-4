@@ -34,13 +34,16 @@ def send_frame_in_packets(frame_data, frame_id):
     total_size = len(frame_data)
     num_packets = (total_size + MAX_PACKET_SIZE - 1) // MAX_PACKET_SIZE
     
+    # 현재 타임스탬프 기록
+    timestamp = time.time()
+    
     for packet_idx in range(num_packets):
         start_idx = packet_idx * MAX_PACKET_SIZE
         end_idx = min(start_idx + MAX_PACKET_SIZE, total_size)
         packet_data = frame_data[start_idx:end_idx]
         
-        # 패킷 헤더: [frame_id(4bytes), packet_idx(4bytes), num_packets(4bytes), data_size(4bytes)]
-        header = struct.pack('!IIII', frame_id, packet_idx, num_packets, len(packet_data))
+        # 패킷 헤더: [timestamp(8bytes), frame_id(4bytes), packet_idx(4bytes), num_packets(4bytes), data_size(4bytes)]
+        header = struct.pack('!dIIII', timestamp, frame_id, packet_idx, num_packets, len(packet_data))
         packet = header + packet_data
         
         sock.sendto(packet, (AI_IP, AI_PORT))
