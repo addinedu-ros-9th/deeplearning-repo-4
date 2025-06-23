@@ -12,8 +12,8 @@ cap = cv2.VideoCapture(0)
 
 # record.py와 동일한 카메라 설정
 cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))  # MJPEG 포맷 강제
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 860)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 645)
 
 if not cap.isOpened():
     print("웹캠을 열 수 없습니다.")
@@ -29,14 +29,22 @@ frame_interval = 1.0 / fps
 last_frame_time = time.time()
 frame_id = 0
 
-def send_frame_single_packet(frame_data, frame_id):
-    """프레임을 단일 패킷으로 전송 (1920x1080 지원)"""
-    # 단일 패킷 헤더: [frame_id(4bytes), packet_idx(0), num_packets(1), data_size(4bytes)]
-    header = struct.pack('!IIII', frame_id, 0, 1, len(frame_data))
-    packet = header + frame_data
+def send_frame_in_packets(frame_data, frame_id):
+    """프레임을 여러 패킷으로 분할하여 전송"""
+    total_size = len(frame_data)
+    num_packets = (total_size + MAX_PACKET_SIZE - 1) // MAX_PACKET_SIZE
     
-    sock.sendto(packet, (AI_IP, AI_PORT))
-    print(f"[CCTV] 프레임 {frame_id} 전송 완료, 크기: {len(frame_data)} bytes")
+    for packet_idx in range(num_packets):
+        start_idx = packet_idx * MAX_PACKET_SIZE
+        end_idx = min(start_idx + MAX_PACKET_SIZE, total_size)
+        packet_data = frame_data[start_idx:end_idx]
+        
+        # 패킷 헤더: [frame_id(4bytes), packet_idx(4bytes), num_packets(4bytes), data_size(4bytes)]
+        header = struct.pack('!IIII', frame_id, packet_idx, num_packets, len(packet_data))
+        packet = header + packet_data
+        
+        sock.sendto(packet, (AI_IP, AI_PORT))
+        print(f"[CCTV] 프레임 {frame_id}, 패킷 {packet_idx+1}/{num_packets}, 크기: {len(packet_data)} bytes")
 
 def recv_full(sock, size):
     data = b''
@@ -90,17 +98,14 @@ while True:
             print("프레임을 읽을 수 없습니다.")
             break
         
-        frame = crop_center(frame, 1920, 1080)
+        frame = crop_center(frame, 720, 540)
 
-        # 프레임을 JPEG로 인코딩 (1920x1080 지원을 위한 품질 조정)
-        result, imgencode = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 75])
-        if not result:
-            print("JPEG 인코딩 실패")
-            continue
+        # 프레임을 JPEG로 인코딩 (원본 해상도 유지)
+        result, imgencode = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
         data = imgencode.tobytes()
         
-        # 프레임을 단일 패킷으로 전송
-        send_frame_single_packet(data, frame_id)
+        # 프레임을 여러 패킷으로 분할하여 전송
+        send_frame_in_packets(data, frame_id)
         frame_id += 1
         last_frame_time = current_time
 
