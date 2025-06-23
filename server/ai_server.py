@@ -174,10 +174,10 @@ def reassemble_frame(frame_id, packets_info):
     
     return frame_data
 
-def receive_frame_udp_packetized(sock):
-    """패킷 분할 방식으로 UDP 프레임 수신 (1920x1080 지원)"""
+def receive_frame_udp_single_packet(sock):
+    """단일 패킷 방식으로 UDP 프레임 수신 (1920x1080 지원)"""
     try:
-        data, addr = sock.recvfrom(65536)
+        data, addr = sock.recvfrom(150000)  # 120KB + 여유분
         
         if len(data) < 16:
             return None
@@ -185,6 +185,11 @@ def receive_frame_udp_packetized(sock):
         # 패킷 헤더 파싱: [frame_id(4bytes), packet_idx(4bytes), num_packets(4bytes), data_size(4bytes)]
         header = data[:16]
         frame_id, packet_idx, num_packets, data_size = struct.unpack('!IIII', header)
+        
+        # 단일 패킷 검증
+        if num_packets != 1 or packet_idx != 0:
+            print(f"잘못된 패킷 형식: frame_id={frame_id}, packet_idx={packet_idx}, num_packets={num_packets}")
+            return None
         
         # 데이터 크기 검증
         if data_size > len(data) - 16:
@@ -195,9 +200,7 @@ def receive_frame_udp_packetized(sock):
         
         return {
             'frame_id': frame_id,
-            'packet_idx': packet_idx,
-            'num_packets': num_packets,
-            'packet_data': packet_data,
+            'frame_data': packet_data,
             'addr': addr
         }
     except socket.timeout:
@@ -219,9 +222,6 @@ def realtime_anomaly_detection(model_path,  # model_path를 필수로 받도록 
     
     # UDP 소켓 설정
     sock = setup_udp_socket(udp_ip, udp_port)
-    
-    # 프레임 재조립을 위한 버퍼
-    frame_buffers = {}  # {frame_id: {packet_idx: data, ...}}
     
     joints_sequence = deque(maxlen=sequence_length)
     print("Starting real-time anomaly detection from UDP stream at 5fps...")
@@ -252,34 +252,20 @@ def realtime_anomaly_detection(model_path,  # model_path를 필수로 받도록 
             current_prediction = None
 
             # UDP로 패킷 수신
-            packet_info = receive_frame_udp_packetized(sock)
+            packet_info = receive_frame_udp_single_packet(sock)
             if packet_info is None:
                 print("No packet received from UDP stream")
                 continue
             
             frame_id = packet_info['frame_id']
-            packet_idx = packet_info['packet_idx']
-            num_packets = packet_info['num_packets']
-            packet_data = packet_info['packet_data']
+            frame_data = packet_info['frame_data']
             
-            # 프레임 버퍼에 패킷 추가
-            if frame_id not in frame_buffers:
-                frame_buffers[frame_id] = {'num_packets': num_packets, 'packets': {}}
+            # 단일 패킷이므로 바로 프레임 디코딩
+            frame = cv2.imdecode(np.frombuffer(frame_data, dtype=np.uint8), cv2.IMREAD_COLOR)
             
-            frame_buffers[frame_id]['packets'][packet_idx] = packet_data
-            
-            # 모든 패킷이 수신되었는지 확인
-            if len(frame_buffers[frame_id]['packets']) == num_packets:
-                complete_frame_data = reassemble_frame(frame_id, frame_buffers[frame_id])
-                
-                if complete_frame_data:
-                    # JPEG 데이터를 프레임으로 디코딩
-                    frame = cv2.imdecode(np.frombuffer(complete_frame_data, dtype=np.uint8), cv2.IMREAD_COLOR)
-                    
-                    if frame is None:
-                        print(f"프레임 {frame_id} 디코딩 실패.")
-                        del frame_buffers[frame_id]
-                        continue
+            if frame is None:
+                print(f"프레임 {frame_id} 디코딩 실패.")
+                continue
             
             # 이상 감지 로직
             joints, keypoints = extract_joints(frame, pose_model)
@@ -387,15 +373,6 @@ def realtime_anomaly_detection(model_path,  # model_path를 필수로 받도록 
                     last_saved_action = None
                     clip_predictions = []
                 send_frame_tcp(frame)
-            
-            # 완성된 프레임 버퍼 삭제
-            del frame_buffers[frame_id]
-            
-            # 오래된 프레임 버퍼 정리
-            current_frame_id = max(frame_buffers.keys()) if frame_buffers else 0
-            old_frames = [fid for fid in frame_buffers.keys() if fid < current_frame_id - 10]
-            for old_frame in old_frames:
-                del frame_buffers[old_frame]
             
             key = cv2.waitKey(1) & 0xFF
             if key == ord('q'):
