@@ -72,7 +72,7 @@ class LoginWindow(QMainWindow):
                 # 로그인 성공 처리
                 print("Login successful!")
                 self.login_successful.emit()
-                
+                get_user_info(id_input)  # 사용자 정보 가져오기
             else : 
                 print("Invalid password.")
                 self.login_textfield2.setProperty("class", "textfield large error")

@@ -83,7 +83,7 @@ class LayoutWindow(QMainWindow):
         
         self.notiBtn.clicked.connect(self.show_noti_popover)
         self.userBtn.clicked.connect(self.show_user_popover)
-
+        
         # UserPopover 생성 및 시그널 연결
         self.user_popover = UserPopover(self)
         self.user_popover.logoutBtn.clicked.connect(self.handle_logout2)
