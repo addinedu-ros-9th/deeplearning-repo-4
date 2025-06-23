@@ -1,0 +1,4 @@
+Flask
+mysql-connector-python
+SQLAlchemy  # models 폴더의 주석 처리된 코드를 사용할 경우 필요
+gunicorn    # 배포 시 사용 
