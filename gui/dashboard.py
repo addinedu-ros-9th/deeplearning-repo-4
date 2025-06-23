@@ -23,31 +23,28 @@ class DashboardWidget(QWidget):
         super().__init__(parent)
         loadUi("dashboard.ui", self)
         self.text1.setProperty("class", "size18 weight700")
-        self.text2.setProperty("class", "size18 weight700")
+        self.text1.setText(f"{self.year1.value()}년 {self.month1.value()}월 통계")
+        self.text2.setText(f"전체 통계")
         self.year1.setProperty("class", "spinbox small")
         self.month1.setProperty("class", "spinbox small")
-        self.date1.setProperty("class", "spinbox small")
         self.text_year.setProperty("class", "color-gray6 size12 weight300")
         self.text_month.setProperty("class", "color-gray6 size12 weight300")
-        self.text_date.setProperty("class", "color-gray6 size12 weight300")
-        self.range1.setProperty("class", "color-black size14 weight600")
-        self.end_date.setProperty("class", "textfield small readonly")
         self.divider1.setProperty("class", "bg grayc")
         self.graph1_container.setProperty("class", "radius otlc")
         self.graph2_container.setProperty("class", "radius otlc")
         self.graph3_container.setProperty("class", "radius otlc")
         self.graph1_text.setProperty("class", "size14 weight700")
         self.graph2_text.setProperty("class", "size14 weight700")
-        self.graph3_text.setProperty("class", "size14 weight700")
+        self.text2.setProperty("class", "size14 weight700")
         self.search_btn.setProperty("class", "btn small outlined primary weight700")
 
         self.labels = ["파손", "유기", "절도", "전등 끔"]
         self.colors = [c["primary"], c["secondary"], c["therity"], c["fourth"]]
         self.data = np.array([
-            [45, 40, 43, 47, 44, 46, 48],  # 파손
-            [38, 37, 39, 38, 37, 39, 40],  # 유기
-            [22, 25, 23, 24, 22, 23, 24],  # 절도
-            [18, 15, 14, 13, 16, 15, 14],  # 전등 끔
+            [45, 40, 43, 47, 44, 46, 48, 32, 41, 56, 17, 65],  # 파손
+            [38, 37, 39, 38, 37, 39, 40, 32, 15, 32, 61, 32],  # 유기
+            [22, 25, 23, 24, 22, 23, 24, 12, 15, 21, 31, 21],  # 절도
+            [18, 15, 14, 13, 16, 15, 14, 22, 15, 17, 12, 15],  # 전등 끔
         ])
         self.graph1_widget = QVBoxLayout(self.graph1)
         self.graph2_widget = QVBoxLayout(self.graph2)
@@ -93,11 +90,12 @@ class DashboardWidget(QWidget):
 
     def on_search_clicked(self):
         self.data = np.array([
-            [18, 15, 14, 13, 16, 15, 14],  # 전등 끔
-            [38, 37, 39, 38, 37, 39, 40],  # 유기
-            [45, 40, 43, 47, 44, 46, 48],  # 파손
-            [22, 25, 23, 24, 22, 23, 24],  # 절도
+            [38, 37, 39, 38, 37, 39, 40, 32, 15, 32, 61, 32],  # 유기
+            [22, 25, 23, 24, 22, 23, 24, 12, 15, 21, 31, 21],  # 절도
+            [45, 40, 43, 47, 44, 46, 48, 32, 41, 56, 17, 65],  # 파손
+            [18, 15, 14, 13, 16, 15, 14, 22, 15, 17, 12, 15],  # 전등 끔
         ])
+        self.text1.setText(f"{self.year1.value()}년 {self.month1.value()}월 통계")
         self.clear_layout()
         self.draw_graph1()
         self.draw_graph2()
@@ -106,7 +104,8 @@ class DashboardWidget(QWidget):
 
 
     def draw_graph1(self):
-        graph1_data = [np.sum(self.data[0]), np.sum(self.data[1]), np.sum(self.data[2]), np.sum(self.data[3])]
+        i = self.month1.value() - 1
+        graph1_data = [self.data[0][i], self.data[1][i], self.data[2][i], self.data[3][i]]
         
         self.canvas = FigureCanvas(Figure(figsize=(3, 3)))
         self.graph1_widget.addWidget(self.canvas)
@@ -123,12 +122,58 @@ class DashboardWidget(QWidget):
         self.ax1.set_aspect('equal')
 
     def draw_graph2(self):
+        graph2_data = np.array([
+            [12, 15, 14, 13, 16, 15, 22, 13, 12, 11, 10, 25],  # 파손
+            [10, 12, 13, 11, 10, 12, 14, 11, 10, 9, 8, 13],    # 유기
+            [8, 7, 9, 8, 7, 9, 10, 8, 7, 6, 5, 9],             # 절도
+            [6, 5, 4, 5, 6, 5, 7, 5, 4, 3, 2, 6],              # 전등 끔
+        ])
+        months2 = [
+            "~2시", "~4시", "~6시", "~8시", "~10시",
+            "~12시", "~14시", "~16시", "~18시", "~20시",
+            "~22시", "~24시"
+        ]
+
+        self.stacked_canvas = FigureCanvas(Figure(figsize=(10, 3)))
+        self.graph2_widget.addWidget(self.stacked_canvas)
+
+        ax2 = self.stacked_canvas.figure.add_subplot(111)
+
+        x2 = np.arange(len(months2))
+        bottom = np.zeros(len(months2))
+        for i in range(len(self.labels)):
+            ax2.bar(
+                x2, graph2_data[i], width=0.5, bottom=bottom,
+                color=self.colors[i], label=self.labels[i]
+            )
+            bottom += graph2_data[i]
+
+        ax2.set_xticks(x2)
+        ax2.set_xticklabels(months2, fontsize=9)
+        max_val2 = np.max(np.sum(graph2_data, axis=0))
+        min_val2 = np.min(np.sum(graph2_data, axis=0))
+        mid_val2 = (min_val2 + max_val2) // 2
+        ax2.set_yticks([min_val2, mid_val2, max_val2])
+        ax2.set_yticklabels([f"{min_val2} 건", f"{mid_val2} 건", f"{max_val2} 건"], fontsize=9)
+        ax2.set_ylim(0, max_val2 * 1.2)
+        ax2.spines['top'].set_visible(False)
+        ax2.spines['right'].set_visible(False)
+        ax2.spines['left'].set_color('#999')
+        ax2.spines['bottom'].set_color('#999')
+        ax2.tick_params(axis='x', length=0) #
+        ax2.tick_params(axis='y', length=5, width=0.5)
+        # ax3.set_xlim(-0.5, len(months3) - 0.5)
+        ax2.margins(y=0.4)
+        ax2.set_xlim(-0.8, len(months2))
+        self.stacked_canvas.figure.tight_layout(rect=[0, 0, 1, 1])
+
+    def draw_graph3(self):
         # 데이터 예시 (월별 4종류)
-        months = ["25.06.22", "25.06.23", "25.06.24", "25.06.25", "25.06.26", "25.06.27", "25.06.28"]
+        months = ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"]
 
         # Figure/Canvas 생성
         self.bar_canvas = FigureCanvas(Figure(figsize=(8, 3)))
-        self.graph2_widget.addWidget(self.bar_canvas)
+        self.graph3_widget.addWidget(self.bar_canvas)
 
         ax = self.bar_canvas.figure.add_subplot(111)
 
@@ -161,52 +206,6 @@ class DashboardWidget(QWidget):
         ax.margins(y=0.2)
 
         self.bar_canvas.figure.tight_layout(rect=[0, 0, 1, 1])
-
-    def draw_graph3(self):
-        graph3_data = np.array([
-            [12, 15, 14, 13, 16, 15, 22, 13, 12, 11, 10, 25],  # 파손
-            [10, 12, 13, 11, 10, 12, 14, 11, 10, 9, 8, 13],    # 유기
-            [8, 7, 9, 8, 7, 9, 10, 8, 7, 6, 5, 9],             # 절도
-            [6, 5, 4, 5, 6, 5, 7, 5, 4, 3, 2, 6],              # 전등 끔
-        ])
-        months3 = [
-            "0시~2시", "2시~4시", "4시~6시", "6시~8시", "8시~10시",
-            "10시~12시", "12시~14시", "14시~16시", "16시~18시", "18시~20시",
-            "20시~22시", "22시~24시"
-        ]
-
-        self.stacked_canvas = FigureCanvas(Figure(figsize=(10, 3)))
-        self.graph3_widget.addWidget(self.stacked_canvas)
-
-        ax3 = self.stacked_canvas.figure.add_subplot(111)
-
-        x3 = np.arange(len(months3))
-        bottom = np.zeros(len(months3))
-        for i in range(len(self.labels)):
-            ax3.bar(
-                x3, graph3_data[i], width=0.5, bottom=bottom,
-                color=self.colors[i], label=self.labels[i]
-            )
-            bottom += graph3_data[i]
-
-        ax3.set_xticks(x3)
-        ax3.set_xticklabels(months3, fontsize=9)
-        max_val3 = np.max(np.sum(graph3_data, axis=0))
-        min_val3 = np.min(np.sum(graph3_data, axis=0))
-        mid_val3 = (min_val3 + max_val3) // 2
-        ax3.set_yticks([min_val3, mid_val3, max_val3])
-        ax3.set_yticklabels([f"{min_val3} 건", f"{mid_val3} 건", f"{max_val3} 건"], fontsize=9)
-        ax3.set_ylim(0, max_val3 * 1.2)
-        ax3.spines['top'].set_visible(False)
-        ax3.spines['right'].set_visible(False)
-        ax3.spines['left'].set_color('#999')
-        ax3.spines['bottom'].set_color('#999')
-        ax3.tick_params(axis='x', length=0) #
-        ax3.tick_params(axis='y', length=5, width=0.5)
-        # ax3.set_xlim(-0.5, len(months3) - 0.5)
-        ax3.margins(y=0.4)
-        ax3.set_xlim(-0.8, len(months3))
-        self.stacked_canvas.figure.tight_layout(rect=[0, 0, 1, 1])
 
     def draw_legend(self):
         # 레전드 
