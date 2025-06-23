@@ -131,12 +131,86 @@ def draw_predictions(frame, probs, current_prediction, fps=None, delay=None):
     return frame
 
 def draw_keypoints(frame, keypoints):
-    """프레임에 관절점 시각화"""
+    """프레임에 관절점 시각화 및 선으로 연결"""
     if keypoints is not None:
+        # 관절점 그리기
         for kp in keypoints[:17]:
-            if len(kp) >= 3 and kp[2] > 0.1: # confidence > 0.1
+            if len(kp) >= 3 and kp[2] > 0.1:  # confidence > 0.1
                 x, y = int(kp[0]), int(kp[1])
                 cv2.circle(frame, (x, y), 5, (0, 255, 0), -1)
+        
+        # 관절점 연결 (COCO 포맷 기준)
+        # 팔 연결
+        limb_connections = [
+            # 얼굴 연결
+            (0, 1), (0, 2), (1, 3), (2, 4),  # 얼굴(눈, 귀)
+            (0, 5), (0, 6),  # 어깨
+            # 팔 연결
+            (5, 7), (7, 9), (6, 8), (8, 10),  # 팔
+            # 몸통 연결
+            (5, 6), (5, 11), (6, 12), (11, 12),  # 몸통
+            # 다리 연결
+            (11, 13), (13, 15), (12, 14), (14, 16)  # 다리
+        ]
+        
+        # 관절점 연결선 그리기
+        for connection in limb_connections:
+            idx1, idx2 = connection
+            if (len(keypoints[idx1]) >= 3 and keypoints[idx1][2] > 0.1 and
+                len(keypoints[idx2]) >= 3 and keypoints[idx2][2] > 0.1):
+                pt1 = (int(keypoints[idx1][0]), int(keypoints[idx1][1]))
+                pt2 = (int(keypoints[idx2][0]), int(keypoints[idx2][1]))
+                cv2.line(frame, pt1, pt2, (0, 255, 255), 2)
+        
+        # 전체 사람 바운딩 박스 그리기
+        valid_points = []
+        for kp in keypoints[:17]:
+            if len(kp) >= 3 and kp[2] > 0.1:
+                valid_points.append((int(kp[0]), int(kp[1])))
+        
+        if valid_points:
+            x_coords = [p[0] for p in valid_points]
+            y_coords = [p[1] for p in valid_points]
+            
+            # 전체 사람 바운딩 박스
+            x_min, x_max = min(x_coords), max(x_coords)
+            y_min, y_max = min(y_coords), max(y_coords)
+            
+            # 패딩 추가 (10%)
+            width = x_max - x_min
+            height = y_max - y_min
+            x_min = max(0, x_min - int(width * 0.1))
+            y_min = max(0, y_min - int(height * 0.1))
+            x_max = min(frame.shape[1], x_max + int(width * 0.1))
+            y_max = min(frame.shape[0], y_max + int(height * 0.1))
+            
+            # 사람 전체 바운딩 박스 그리기 (파란색)
+            cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (255, 0, 0), 2)
+            
+            # 얼굴 바운딩 박스 그리기 (빨간색)
+            face_keypoints = []
+            for idx in [0, 1, 2, 3, 4]:  # 얼굴 관련 키포인트 (코, 눈, 귀)
+                if len(keypoints[idx]) >= 3 and keypoints[idx][2] > 0.1:
+                    face_keypoints.append((int(keypoints[idx][0]), int(keypoints[idx][1])))
+            
+            if face_keypoints:
+                face_x_coords = [p[0] for p in face_keypoints]
+                face_y_coords = [p[1] for p in face_keypoints]
+                
+                face_x_min, face_x_max = min(face_x_coords), max(face_x_coords)
+                face_y_min, face_y_max = min(face_y_coords), max(face_y_coords)
+                
+                # 얼굴 패딩 추가 (20%)
+                face_width = face_x_max - face_x_min
+                face_height = face_y_max - face_y_min
+                face_x_min = max(0, face_x_min - int(face_width * 0.2))
+                face_y_min = max(0, face_y_min - int(face_height * 0.2))
+                face_x_max = min(frame.shape[1], face_x_max + int(face_width * 0.2))
+                face_y_max = min(frame.shape[0], face_y_max + int(face_height * 0.2))
+                
+                # 얼굴 바운딩 박스 그리기 (빨간색)
+                cv2.rectangle(frame, (face_x_min, face_y_min), (face_x_max, face_y_max), (0, 0, 255), 2)
+    
     return frame
 
 def setup_udp_socket(udp_ip, udp_port):
@@ -387,6 +461,7 @@ def realtime_anomaly_detection(model_path,  # model_path를 필수로 받도록 
                             last_saved_action = None
                             clip_predictions = []
                     
+                    frame = draw_keypoints(frame, keypoints)
                     cv2.imshow('AI Server Feed', frame)
                     # send_frame_tcp(frame)
                 
