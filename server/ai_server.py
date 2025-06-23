@@ -174,10 +174,10 @@ def reassemble_frame(frame_id, packets_info):
     
     return frame_data
 
-def receive_frame_udp_packetized(sock):
-    """패킷 분할 방식으로 UDP 프레임 수신 (cctv_udp_client.py 호환)"""
+def receive_frame_udp_single_packet(sock):
+    """단일 패킷 방식으로 UDP 프레임 수신 (1920x1080 지원)"""
     try:
-        data, addr = sock.recvfrom(65536)
+        data, addr = sock.recvfrom(150000)  # 120KB + 여유분
         
         if len(data) < 16:
             return None
@@ -185,13 +185,22 @@ def receive_frame_udp_packetized(sock):
         # 패킷 헤더 파싱: [frame_id(4bytes), packet_idx(4bytes), num_packets(4bytes), data_size(4bytes)]
         header = data[:16]
         frame_id, packet_idx, num_packets, data_size = struct.unpack('!IIII', header)
+        
+        # 단일 패킷 검증
+        if num_packets != 1 or packet_idx != 0:
+            print(f"잘못된 패킷 형식: frame_id={frame_id}, packet_idx={packet_idx}, num_packets={num_packets}")
+            return None
+        
+        # 데이터 크기 검증
+        if data_size > len(data) - 16:
+            print(f"패킷 데이터 크기 불일치: 예상 {data_size}, 실제 {len(data) - 16}")
+            return None
+            
         packet_data = data[16:16+data_size]
         
         return {
             'frame_id': frame_id,
-            'packet_idx': packet_idx,
-            'num_packets': num_packets,
-            'packet_data': packet_data,
+            'frame_data': packet_data,
             'addr': addr
         }
     except socket.timeout:
@@ -213,9 +222,6 @@ def realtime_anomaly_detection(model_path,  # model_path를 필수로 받도록 
     
     # UDP 소켓 설정
     sock = setup_udp_socket(udp_ip, udp_port)
-    
-    # 프레임 재조립을 위한 버퍼
-    frame_buffers = {}  # {frame_id: {packet_idx: data, ...}}
     
     joints_sequence = deque(maxlen=sequence_length)
     print("Starting real-time anomaly detection from UDP stream at 5fps...")
@@ -246,150 +252,127 @@ def realtime_anomaly_detection(model_path,  # model_path를 필수로 받도록 
             current_prediction = None
 
             # UDP로 패킷 수신
-            packet_info = receive_frame_udp_packetized(sock)
+            packet_info = receive_frame_udp_single_packet(sock)
             if packet_info is None:
                 print("No packet received from UDP stream")
                 continue
             
             frame_id = packet_info['frame_id']
-            packet_idx = packet_info['packet_idx']
-            num_packets = packet_info['num_packets']
-            packet_data = packet_info['packet_data']
+            frame_data = packet_info['frame_data']
             
-            # 프레임 버퍼에 패킷 추가
-            if frame_id not in frame_buffers:
-                frame_buffers[frame_id] = {'num_packets': num_packets, 'packets': {}}
+            # 단일 패킷이므로 바로 프레임 디코딩
+            frame = cv2.imdecode(np.frombuffer(frame_data, dtype=np.uint8), cv2.IMREAD_COLOR)
             
-            frame_buffers[frame_id]['packets'][packet_idx] = packet_data
+            if frame is None:
+                print(f"프레임 {frame_id} 디코딩 실패.")
+                continue
             
-            # 모든 패킷이 수신되었는지 확인
-            if len(frame_buffers[frame_id]['packets']) == num_packets:
-                complete_frame_data = reassemble_frame(frame_id, frame_buffers[frame_id])
-                
-                if complete_frame_data:
-                    # JPEG 데이터를 프레임으로 디코딩
-                    frame = cv2.imdecode(np.frombuffer(complete_frame_data, dtype=np.uint8), cv2.IMREAD_COLOR)
+            # 이상 감지 로직
+            joints, keypoints = extract_joints(frame, pose_model)
+            has_person = False
+            if keypoints is not None:
+                for kp in keypoints[:17]:
+                    if len(kp) >= 3:
+                        x, y, conf = kp[0], kp[1], kp[2]
+                        if conf > 0.1:
+                            has_person = True
+                            cv2.circle(frame, (int(x), int(y)), 3, (0, 255, 0), -1)
+            if has_person:
+                joints_sequence.append(joints)
+                if len(joints_sequence) >= sequence_length:
+                    input_tensor = torch.FloatTensor(list(joints_sequence)).unsqueeze(0).to(device)
+                    with torch.no_grad():
+                        logits = model(input_tensor)
+                        probs = F.softmax(logits[:, -1, :], dim=-1).cpu().numpy()[0]
                     
-                    if frame is None:
-                        print(f"프레임 {frame_id} 디코딩 실패.")
-                        del frame_buffers[frame_id]
-                        continue
-                    
-                    # 이상 감지 로직
-                    joints, keypoints = extract_joints(frame, pose_model)
-                    has_person = False
-                    if keypoints is not None:
-                        for kp in keypoints[:17]:
-                            if len(kp) >= 3:
-                                x, y, conf = kp[0], kp[1], kp[2]
-                                if conf > 0.1:
-                                    has_person = True
-                                    cv2.circle(frame, (int(x), int(y)), 3, (0, 255, 0), -1)
-                    if has_person:
-                        joints_sequence.append(joints)
-                        if len(joints_sequence) >= sequence_length:
-                            input_tensor = torch.FloatTensor(list(joints_sequence)).unsqueeze(0).to(device)
-                            with torch.no_grad():
-                                logits = model(input_tensor)
-                                probs = F.softmax(logits[:, -1, :], dim=-1).cpu().numpy()[0]
-                            
-                            # 신뢰도가 0.8 이상일 때만 해당 라벨로 예측, 그 이하는 Normal
-                            max_prob = np.max(probs)
-                            if max_prob >= 0.8:
-                                current_prediction = np.argmax(probs)
-                            else:
-                                current_prediction = 0  # Normal로 분류
-                            
-                            frame = draw_predictions(frame, probs, current_prediction, None)
-                            joints_sequence.popleft()
-                        else:
-                            remaining = sequence_length - len(joints_sequence)
-                            cv2.putText(frame, f"Collecting data... ({remaining} frames left)", 
-                                        (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+                    # 신뢰도가 0.8 이상일 때만 해당 라벨로 예측, 그 이하는 Normal
+                    max_prob = np.max(probs)
+                    if max_prob >= 0.8:
+                        current_prediction = np.argmax(probs)
                     else:
-                        # 사람이 감지되지 않았을 때 시퀀스 초기화
-                        joints_sequence.clear()
-                        prev_prediction = None  # 이전 예측 리셋
-                        cv2.putText(frame, "No person detected", 
-                                    (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+                        current_prediction = 0  # Normal로 분류
                     
-                    video_buffer.append(frame.copy())
-                    
-                    # 프레임을 미리 저장 (이상 행위 시작 전용)
-                    pre_buffer_frames.append(frame.copy())
-                    if len(pre_buffer_frames) > pre_buffer_size:
-                        pre_buffer_frames.pop(0)  # 가장 오래된 프레임 제거
-                    
-                    if current_prediction is not None:
-                        if prev_prediction is not None and current_prediction != prev_prediction:
-                            pred_buffer.clear()
-                        pred_buffer.append(current_prediction)
-                        prev_prediction = current_prediction
-                        frame = draw_predictions(frame, probs, current_prediction, None)
-                    if (
-                        len(pred_buffer) == 7 and
-                        len(set(pred_buffer)) == 1 and
-                        pred_buffer[0] != 0 and
-                        not saving and
-                        pred_buffer[0] != last_saved_action
-                    ):
-                        saving = True
-                        save_countdown = 45
-                        detected_action = list(set(pred_buffer))[0]
-                        last_saved_action = detected_action
-                        dt_str = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-                        action_name = ["Normal", "Theft", "Abandon", "Broken"][detected_action]
-                        filename = f"{action_name}_{dt_str}.mp4"
-                        fourcc = cv2.VideoWriter.fourcc(*'mp4v')
-                        height, width = frame.shape[:2]
-                        out = cv2.VideoWriter(filename, fourcc, 5, (width, height))
-                        
-                        if out.isOpened():
-                            print(f"Started saving clip: {filename}")
-                            for pre_frame in pre_buffer_frames:
-                                out.write(pre_frame)
-                        else:
-                            print(f"Failed to open video writer for {filename}")
-                            saving = False
-                    
-                    if saving:
-                        if out and out.isOpened():
-                            out.write(frame)
-
-                        if current_prediction is not None:
-                            clip_predictions.append(current_prediction)
-                        save_countdown -= 1
-
-                        if save_countdown == 0:
-                            if out and out.isOpened():
-                                out.release()
-                            saving = False
-                            
-                            abnormal_preds = [p for p in clip_predictions if p not in (0, None)]
-                            if abnormal_preds:
-                                major_action = Counter(abnormal_preds).most_common(1)[0][0]
-                                action_name = ["Normal", "Theft", "Abandon", "Broken"][major_action]
-                                new_filename = f"{action_name}_{dt_str}.mp4"
-                                if filename and os.path.exists(filename):
-                                    os.rename(filename, new_filename)
-                                    print(f"Clip saved: {new_filename}")
-                            else:
-                                if filename and os.path.exists(filename):
-                                    os.remove(filename)
-                                    print("Clip was mostly Normal, so it was deleted.")
-                            
-                            last_saved_action = None
-                            clip_predictions = []
-                    send_frame_tcp(frame)
-                
-                # 완성된 프레임 버퍼 삭제
-                del frame_buffers[frame_id]
+                    frame = draw_predictions(frame, probs, current_prediction, None)
+                    joints_sequence.popleft()
+                else:
+                    remaining = sequence_length - len(joints_sequence)
+                    cv2.putText(frame, f"Collecting data... ({remaining} frames left)", 
+                                (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+            else:
+                # 사람이 감지되지 않았을 때 시퀀스 초기화
+                joints_sequence.clear()
+                prev_prediction = None  # 이전 예측 리셋
+                cv2.putText(frame, "No person detected", 
+                            (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
             
-            # 오래된 프레임 버퍼 정리
-            current_frame_id = max(frame_buffers.keys()) if frame_buffers else 0
-            old_frames = [fid for fid in frame_buffers.keys() if fid < current_frame_id - 10]
-            for old_frame in old_frames:
-                del frame_buffers[old_frame]
+            video_buffer.append(frame.copy())
+            
+            # 프레임을 미리 저장 (이상 행위 시작 전용)
+            pre_buffer_frames.append(frame.copy())
+            if len(pre_buffer_frames) > pre_buffer_size:
+                pre_buffer_frames.pop(0)  # 가장 오래된 프레임 제거
+            
+            if current_prediction is not None:
+                if prev_prediction is not None and current_prediction != prev_prediction:
+                    pred_buffer.clear()
+                pred_buffer.append(current_prediction)
+                prev_prediction = current_prediction
+                frame = draw_predictions(frame, probs, current_prediction, None)
+            if (
+                len(pred_buffer) == 7 and
+                len(set(pred_buffer)) == 1 and
+                pred_buffer[0] != 0 and
+                not saving and
+                pred_buffer[0] != last_saved_action
+            ):
+                saving = True
+                save_countdown = 45
+                detected_action = list(set(pred_buffer))[0]
+                last_saved_action = detected_action
+                dt_str = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+                action_name = ["Normal", "Theft", "Abandon", "Broken"][detected_action]
+                filename = f"{action_name}_{dt_str}.mp4"
+                fourcc = cv2.VideoWriter.fourcc(*'mp4v')
+                height, width = frame.shape[:2]
+                out = cv2.VideoWriter(filename, fourcc, 5, (width, height))
+                
+                if out.isOpened():
+                    print(f"Started saving clip: {filename}")
+                    for pre_frame in pre_buffer_frames:
+                        out.write(pre_frame)
+                else:
+                    print(f"Failed to open video writer for {filename}")
+                    saving = False
+            
+            if saving:
+                if out and out.isOpened():
+                    out.write(frame)
+
+                if current_prediction is not None:
+                    clip_predictions.append(current_prediction)
+                save_countdown -= 1
+
+                if save_countdown == 0:
+                    if out and out.isOpened():
+                        out.release()
+                    saving = False
+                    
+                    abnormal_preds = [p for p in clip_predictions if p not in (0, None)]
+                    if abnormal_preds:
+                        major_action = Counter(abnormal_preds).most_common(1)[0][0]
+                        action_name = ["Normal", "Theft", "Abandon", "Broken"][major_action]
+                        new_filename = f"{action_name}_{dt_str}.mp4"
+                        if filename and os.path.exists(filename):
+                            os.rename(filename, new_filename)
+                            print(f"Clip saved: {new_filename}")
+                    else:
+                        if filename and os.path.exists(filename):
+                            os.remove(filename)
+                            print("Clip was mostly Normal, so it was deleted.")
+                        
+                    last_saved_action = None
+                    clip_predictions = []
+                send_frame_tcp(frame)
             
             key = cv2.waitKey(1) & 0xFF
             if key == ord('q'):
