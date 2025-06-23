@@ -15,8 +15,13 @@ import time
 import datetime
 import socket
 import struct
+import json
 
 from config import RECIEVER_IP, RECIEVER_PORT, CENTRAL_IP, CENTRAL_PORT
+
+# GUI UDP 통신을 위한 설정 추가
+GUI_UDP_IP = "127.0.0.1"  # GUI IP 주소
+GUI_UDP_PORT = 5006  # GUI UDP 포트
 
 # ai_server.py가 있는 디렉토리의 부모 디렉토리를 경로에 추가
 # 이렇게 하면 deeplearning-repo-4 폴더를 기준으로 anomaly_detection 모듈을 찾을 수 있음
@@ -58,7 +63,11 @@ FACE_KEYPOINT_INDICES = [0, 1, 2, 3, 4]  # 얼굴 관련 키포인트 (코, 눈,
 
 # --- 모델 및 디바이스 설정 ---
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-tcp_sock = None # TCP 소켓을 전역 변수로 관리
+tcp_sock = None
+gui_udp_sock = None
+frame_counter = 0  # 프레임 ID 카운터
+last_gui_send_time = 0
+GUI_SEND_INTERVAL = 0.33  # 약 3 FPS (1초 / 3 = 0.33초)
 
 def ensure_tcp_connection():
     """TCP 소켓 연결을 확인하고, 끊겼으면 재연결합니다."""
@@ -87,7 +96,7 @@ def ensure_tcp_connection():
         return False
 
 def send_frame_tcp(frame):
-    """처리된 프레임을 중앙 서버로 전송 (연결 확인 기능 포함)"""
+    """처리된 프레임을 중앙 서버로 전송 (패킷 헤더 형식 사용)"""
     global tcp_sock
     if not ensure_tcp_connection():
         time.sleep(1) # 연결 실패 시 잠시 대기
@@ -97,10 +106,21 @@ def send_frame_tcp(frame):
         # 프레임을 JPEG로 인코딩
         result, encoded_frame = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 90])
         if result:
-            data = encoded_frame.tobytes()
-            # 데이터 길이를 먼저 보내고 그 다음 실제 데이터를 전송
+            packet_data = encoded_frame.tobytes()
+            
+            # 패킷 헤더 형식: [timestamp(8bytes), frame_id(4bytes), packet_idx(4bytes), num_packets(4bytes), data_size(4bytes)]
+            timestamp = time.time()
+            frame_id = int(timestamp * 1000)  # 밀리초 단위로 프레임 ID 생성
+            packet_idx = 0  # 단일 패킷이므로 0
+            num_packets = 1  # 단일 패킷
+            data_size = len(packet_data)
+            
+            header = struct.pack('!dIIII', timestamp, frame_id, packet_idx, num_packets, data_size)
+            packet = header + packet_data
+            
             if tcp_sock:
-                tcp_sock.sendall(struct.pack('!I', len(data)) + data)
+                tcp_sock.sendall(packet)
+                print(f"[AI 서버] 프레임 전송: {data_size} bytes")
         else:
             print("[AI 서버] 프레임 인코딩 실패")
     except socket.error as e:
@@ -108,6 +128,62 @@ def send_frame_tcp(frame):
         if tcp_sock:
             tcp_sock.close()
         tcp_sock = None
+
+def send_frame_udp_to_gui(frame):
+    """처리된 프레임을 GUI로 UDP 전송 (패킷 분할 방식)"""
+    global gui_udp_sock, frame_counter, last_gui_send_time
+    
+    # 프레임 전송 빈도 제한 (3 FPS)
+    current_time = time.time()
+    if current_time - last_gui_send_time < GUI_SEND_INTERVAL:
+        return
+    last_gui_send_time = current_time
+    
+    # UDP 소켓이 없으면 생성
+    if gui_udp_sock is None:
+        try:
+            gui_udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            print(f"[AI 서버] GUI UDP 소켓 생성: {GUI_UDP_IP}:{GUI_UDP_PORT}")
+        except Exception as e:
+            print(f"[AI 서버] GUI UDP 소켓 생성 실패: {e}")
+            return
+
+    try:
+        # GUI용 해상도 축소 (640x480으로 리사이즈)
+        gui_frame = cv2.resize(frame, (640, 480))
+        
+        # 프레임을 JPEG로 인코딩 (품질 낮춤)
+        result, encoded_frame = cv2.imencode('.jpg', gui_frame, [int(cv2.IMWRITE_JPEG_QUALITY), 60])
+        if result:
+            frame_data = encoded_frame.tobytes()
+            total_size = len(frame_data)
+            
+            # 패킷 크기 설정 (cctv_udp_client.py와 동일)
+            MAX_PACKET_SIZE = 60000
+            num_packets = (total_size + MAX_PACKET_SIZE - 1) // MAX_PACKET_SIZE
+            
+            # 현재 타임스탬프 기록
+            timestamp = time.time()
+            frame_id = frame_counter % 0xFFFFFFFF
+            
+            for packet_idx in range(num_packets):
+                start_idx = packet_idx * MAX_PACKET_SIZE
+                end_idx = min(start_idx + MAX_PACKET_SIZE, total_size)
+                packet_data = frame_data[start_idx:end_idx]
+                
+                # 패킷 헤더: [timestamp(8bytes), frame_id(4bytes), packet_idx(4bytes), num_packets(4bytes), data_size(4bytes)]
+                header = struct.pack('!dIIII', timestamp, frame_id, packet_idx, num_packets, len(packet_data))
+                packet = header + packet_data
+                
+                gui_udp_sock.sendto(packet, (GUI_UDP_IP, GUI_UDP_PORT))
+                print(f"[AI 서버] GUI로 UDP 전송: 프레임 {frame_id}, 패킷 {packet_idx+1}/{num_packets}, 크기: {len(packet_data)} bytes")
+            
+            # 카운터 증가
+            frame_counter += 1
+        else:
+            print("[AI 서버] 프레임 인코딩 실패")
+    except Exception as e:
+        print(f"[AI 서버] GUI UDP 전송 오류: {e}")
 
 def load_model(model_path):
     """모델 로드 함수"""
@@ -135,7 +211,7 @@ def extract_joints(frame, pose_model):
         print(f"Error processing frame: {e}")
         return np.zeros(17 * 4), None
 
-def draw_predictions(frame, probs, current_prediction, fps=None, delay=None):
+def draw_predictions(frame, probs, current_prediction, fps=None):
     """프레임에 예측 결과를 왼쪽 위에 표시"""
     overlay = frame.copy()
     cv2.rectangle(overlay, (10, 10), (350, 220), (0, 0, 0), -1)
@@ -153,9 +229,6 @@ def draw_predictions(frame, probs, current_prediction, fps=None, delay=None):
             color = (200, 200, 200)
             cv2.putText(frame, f"{label}: {prob:.3f}", 
                         (20, y_offset + i * 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
-    
-    if delay:
-        cv2.putText(frame, delay, (20, 180), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 1)
 
     return frame
 
@@ -409,8 +482,7 @@ def realtime_anomaly_detection(model_path, pose_model_path='yolov8n-pose.pt', se
     pred_buffer = deque(maxlen=PREDICTION_BUFFER_SIZE)
     saving = False
     save_countdown = 0
-    out = None
-    filename = None
+    clip_frames = []  # 클립 프레임들을 메모리에 저장
     detected_action = None
     last_saved_action = None
     prev_prediction = None
@@ -454,10 +526,6 @@ def realtime_anomaly_detection(model_path, pose_model_path='yolov8n-pose.pt', se
                         del frame_buffers[frame_id]
                         continue
                     
-                    # 딜레이 계산 및 표시
-                    delay = time.time() - original_timestamp
-                    delay_text = f"Delay: {delay*1000:.2f} ms"
-                    
                     # 버그 수정을 위해 probs를 기본값으로 초기화
                     probs = np.array([1.0, 0.0, 0.0, 0.0])
 
@@ -499,7 +567,7 @@ def realtime_anomaly_detection(model_path, pose_model_path='yolov8n-pose.pt', se
                             else:
                                 current_prediction = 0  # Normal로 분류
                             
-                            frame = draw_predictions(frame, probs, current_prediction, None, delay_text)
+                            frame = draw_predictions(frame, probs, current_prediction)
                             joints_sequence.popleft()
                         else:
                             remaining = sequence_length - len(joints_sequence)
@@ -536,58 +604,50 @@ def realtime_anomaly_detection(model_path, pose_model_path='yolov8n-pose.pt', se
                         last_saved_action = detected_action
                         dt_str = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
                         action_name = LABEL_NAMES[detected_action]
-                        filename = f"{action_name}_{dt_str}.mp4"
-                        out = create_video_writer(filename, frame.shape)
+                        
+                        # 클립 프레임 버퍼 초기화
+                        clip_frames = []
                         
                         # 새 클립 시작 시 사람 수 초기화
                         current_clip_max_persons = person_count
                         
-                        if out.isOpened():
-                            print(f"Started saving clip: {filename}")
-                            # 이전 버퍼 프레임들 처리
-                            current_clip_max_persons = process_pre_buffer_frames(
-                                pre_buffer_frames, pose_model, out, current_clip_max_persons
-                            )
-                        else:
-                            print(f"Failed to open video writer for {filename}")
-                            saving = False
+                        print(f"Started recording clip: {action_name}")
+                        # 이전 버퍼 프레임들 처리
+                        for pre_frame in pre_buffer_frames:
+                            clip_frames.append(pre_frame.copy())
+                            current_clip_max_persons = max(current_clip_max_persons, count_valid_persons(extract_joints(pre_frame, pose_model)[1]))
                     
                     # 저장 중 처리
                     if saving:
                         add_recording_overlay(frame)
                         
-                        if out and out.isOpened():
-                            out.write(frame)
+                        # 프레임을 메모리에 저장
+                        clip_frames.append(frame.copy())
 
                         if current_prediction is not None:
                             clip_predictions.append(current_prediction)
                         save_countdown -= 1
 
                         if save_countdown == 0:
-                            if out and out.isOpened():
-                                out.release()
                             saving = False
                             
                             abnormal_preds = [p for p in clip_predictions if p not in (0, None)]
                             if abnormal_preds:
                                 major_action = Counter(abnormal_preds).most_common(1)[0][0]
                                 action_name = LABEL_NAMES[major_action]
-                                # 파일명에 최대 사람 수 추가
-                                new_filename = f"{action_name}_p{current_clip_max_persons}_{dt_str}.mp4"
-                                if filename and os.path.exists(filename):
-                                    os.rename(filename, new_filename)
-                                    print(f"Clip saved: {new_filename}")
+                                
+                                # 클립 데이터를 메모리에서 직접 Central 서버로 전송
+                                send_clip_frames_to_central_server(clip_frames, action_name, current_clip_max_persons, dt_str)
                             else:
-                                if filename and os.path.exists(filename):
-                                    os.remove(filename)
-                                    print("Clip was mostly Normal, so it was deleted.")
+                                print("Clip was mostly Normal, so it was not sent.")
                             
                             last_saved_action = None
                             clip_predictions = []
                             current_clip_max_persons = 0  # 클립 저장 후 사람 수 초기화
+                            clip_frames = []  # 클립 프레임 버퍼 초기화
                     
                     cv2.imshow('AI Server Feed', frame)
-                    send_frame_tcp(frame)
+                    send_frame_udp_to_gui(frame)  # GUI로 UDP 전송
                 
                 # 완성된 프레임 버퍼 삭제
                 del frame_buffers[frame_id]
@@ -618,10 +678,81 @@ def realtime_anomaly_detection(model_path, pose_model_path='yolov8n-pose.pt', se
         sock.close()
         if tcp_sock: # 프로그램 종료 시 소켓 닫기
             tcp_sock.close()
+        if gui_udp_sock:  # GUI UDP 소켓 닫기
+            gui_udp_sock.close()
         cv2.destroyAllWindows()
-        if out is not None and saving:
-            out.release()
         print("UDP connection closed")
+
+def send_clip_frames_to_central_server(clip_frames, action_name, person_count, timestamp_str):
+    """프레임들을 비디오로 인코딩하여 Central 서버로 전송"""
+    global tcp_sock, frame_counter
+    if not ensure_tcp_connection():
+        print("[AI 서버] Central 서버 연결 실패 - 클립 전송 불가")
+        return
+
+    try:
+        if not clip_frames:
+            print("[AI 서버] 클립 프레임이 없음")
+            return
+            
+        # 프레임들을 비디오로 인코딩
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        temp_filename = f"temp_clip_{frame_counter}.mp4"
+        
+        # 첫 번째 프레임의 크기로 비디오 라이터 생성
+        height, width = clip_frames[0].shape[:2]
+        out = cv2.VideoWriter(temp_filename, fourcc, 5, (width, height))
+        
+        if not out.isOpened():
+            print("[AI 서버] 비디오 라이터 생성 실패")
+            return
+            
+        # 프레임들을 비디오에 추가
+        for frame in clip_frames:
+            out.write(frame)
+        out.release()
+        
+        # 인코딩된 비디오 파일 읽기
+        with open(temp_filename, 'rb') as f:
+            clip_data = f.read()
+        
+        # 임시 파일 삭제
+        os.remove(temp_filename)
+        
+        # 클립 메타데이터 생성 (행위, 사람 수, 타임스탬프)
+        metadata = {
+            'action_name': action_name,
+            'person_count': person_count,
+            'timestamp': timestamp_str,
+            'frame_count': len(clip_frames)
+        }
+        
+        # 메타데이터를 JSON으로 직렬화
+        metadata_json = json.dumps(metadata).encode('utf-8')
+        metadata_size = len(metadata_json)
+        
+        # 클립 데이터를 패킷으로 전송 (메타데이터 + 비디오 데이터)
+        timestamp = time.time()
+        frame_id = frame_counter % 0xFFFFFFFF
+        packet_idx = 0
+        num_packets = 1
+        data_size = metadata_size + len(clip_data)
+        
+        # 헤더: [timestamp, frame_id, packet_idx, num_packets, data_size, metadata_size]
+        header = struct.pack('!dIIIII', timestamp, frame_id, packet_idx, num_packets, data_size, metadata_size)
+        packet = header + metadata_json + clip_data
+        
+        tcp_sock.sendall(packet)
+        print(f"[AI 서버] Central 서버로 클립 전송: {action_name}_p{person_count}_{timestamp_str}, 크기: {data_size} bytes")
+        
+        # 카운터 증가
+        frame_counter += 1
+        
+    except Exception as e:
+        print(f"[AI 서버] 클립 전송 오류: {e}")
+        if tcp_sock:
+            tcp_sock.close()
+        tcp_sock = None
 
 if __name__ == "__main__":
     # 프로젝트 루트를 기준으로 모델 파일의 절대 경로 생성

@@ -4,11 +4,11 @@ import threading
 import cv2
 import numpy as np
 import struct
+import os
+import json
 
 # AI 서버로부터 수신
 AI_PORT = 6006
-# GUI와 통신
-GUI_PORT = 7007
 
 def recv_full(sock, size):
     data = b''
@@ -19,57 +19,59 @@ def recv_full(sock, size):
         data += packet
     return data
 
-def handle_ai(ai_conn, gui_conn):
+def handle_ai(ai_conn):
     print("[Central] AI 서버 핸들러 시작")
     while True:
         try:
-            # 1. 4바이트 길이 먼저 받기
-            length_bytes = recv_full(ai_conn, 4)
-            if not length_bytes:
+            # 패킷 헤더 수신 (28바이트 - metadata_size 추가)
+            header_bytes = recv_full(ai_conn, 28)
+            if not header_bytes:
                 break
-            frame_len = struct.unpack('!I', length_bytes)[0]
-
-            # 2. 프레임 데이터 받기
-            frame_bytes = recv_full(ai_conn, frame_len)
-            if not frame_bytes:
+            
+            # 헤더 파싱: [timestamp(8bytes), frame_id(4bytes), packet_idx(4bytes), num_packets(4bytes), data_size(4bytes), metadata_size(4bytes)]
+            timestamp, frame_id, packet_idx, num_packets, data_size, metadata_size = struct.unpack('!dIIIII', header_bytes)
+            
+            # 패킷 데이터 수신
+            packet_data = recv_full(ai_conn, data_size)
+            if not packet_data:
                 break
 
-            print(f"[Central] AI서버에서 수신: {frame_len} bytes")
+            print(f"[Central] AI서버에서 수신: 프레임 {frame_id}, 패킷 {packet_idx+1}/{num_packets}, 크기: {data_size} bytes")
             
             try:
-                # 프레임 디코딩 테스트 (데이터 무결성 확인)
-                nparr = np.frombuffer(frame_bytes, np.uint8)
-                frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-                if frame is None:
-                    print("[Central] 프레임 디코딩 실패")
-                    continue
-                
-                # GUI로 데이터 전달
-                gui_conn.sendall(struct.pack('!I', frame_len) + frame_bytes)
-                print(f"[Central] GUI로 전송: {frame_len} bytes")
+                # 데이터가 클립인지 프레임인지 확인 (크기로 판단)
+                if data_size > 1000000:  # 1MB 이상이면 클립으로 간주
+                    # 메타데이터와 비디오 데이터 분리
+                    metadata_json = packet_data[:metadata_size]
+                    video_data = packet_data[metadata_size:]
+                    
+                    # 메타데이터 파싱
+                    metadata = json.loads(metadata_json.decode('utf-8'))
+                    action_name = metadata['action_name']
+                    person_count = metadata['person_count']
+                    timestamp_str = metadata['timestamp']
+                    
+                    # 클립 저장 디렉토리 생성
+                    clips_dir = "received_clips"
+                    if not os.path.exists(clips_dir):
+                        os.makedirs(clips_dir)
+                    
+                    # 의미있는 파일명으로 저장
+                    clip_filename = os.path.join(clips_dir, f"{action_name}_p{person_count}_{timestamp_str}.mp4")
+                    with open(clip_filename, 'wb') as f:
+                        f.write(video_data)
+                    print(f"[Central] 클립 저장됨: {clip_filename}")
+                else:
+                    print(f"[Central] 프레임 데이터 수신 (저장하지 않음): {data_size} bytes")
+                    
             except Exception as e:
-                print(f"[Central] 프레임 처리 중 오류: {e}")
+                print(f"[Central] 데이터 처리 중 오류: {e}")
                 
         except Exception as e:
             print(f"[Central] 수신 중 오류: {e}")
             break
     
     print("[Central] AI 서버 핸들러 종료")
-
-def handle_gui(gui_conn, ai_conn):
-    print("[Central] GUI 핸들러 시작")
-    while True:
-        try:
-            data = gui_conn.recv(65536)
-            if not data:
-                print("[Central] GUI 연결 종료")
-                break
-            # 필요시 AI 서버로 데이터 전달
-            ai_conn.sendall(data)
-        except Exception as e:
-            print(f"[Central] GUI 통신 중 오류: {e}")
-            break
-    print("[Central] GUI 핸들러 종료")
 
 print("[Central] 중앙서버 시작...")
 
@@ -82,31 +84,17 @@ print(f"[Central] AI 서버 연결 대기 중... (Port: {AI_PORT})")
 ai_conn, ai_addr = ai_sock.accept()
 print(f"[Central] AI 서버 연결됨: {ai_addr}")
 
-# GUI 연결 대기
-gui_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-gui_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-gui_sock.bind(('0.0.0.0', GUI_PORT))
-gui_sock.listen(1)
-print(f"[Central] GUI 연결 대기 중... (Port: {GUI_PORT})")
-gui_conn, gui_addr = gui_sock.accept()
-print(f"[Central] GUI 연결됨: {gui_addr}")
-
-# 스레드로 양방향 통신
-ai_thread = threading.Thread(target=handle_ai, args=(ai_conn, gui_conn))
-gui_thread = threading.Thread(target=handle_gui, args=(gui_conn, ai_conn))
-
+# AI 서버 핸들러 시작
+ai_thread = threading.Thread(target=handle_ai, args=(ai_conn,))
 ai_thread.start()
-gui_thread.start()
 
-print("[Central] 양방향 통신 시작...")
+print("[Central] 클립 수신 대기 중...")
 
 try:
     ai_thread.join()
-    gui_thread.join()
 except KeyboardInterrupt:
     print("\n[Central] 서버 종료 중...")
 finally:
     ai_conn.close()
-    gui_conn.close()
     ai_sock.close()
-    gui_sock.close()
+    print("[Central] 서버 종료됨")
