@@ -1,6 +1,7 @@
-from flask import Blueprint, request, jsonify
-from services import auth_service
-from utils.response_utils import success_response, error_response
+import json
+import traceback
+from flask import Blueprint, request, Response
+from central_server.services import auth_service
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -8,16 +9,18 @@ bp = Blueprint('auth', __name__, url_prefix='/auth')
 def login():
     """IF-01: 로그인"""
     data = request.get_json()
-    if not data or 'user_id' not in data:
-        return error_response("user_id is required", 400)
-
     user_id = data.get('user_id')
+    password = data.get('passwd')
 
-    is_verified = auth_service.verify_user(user_id)
+    if not user_id or not password:
+        error_response = {"status": "error", "message": "user_id and passwd are required"}
+        return Response(json.dumps(error_response, ensure_ascii=False), mimetype='application/json'), 404
 
-    if is_verified:
-        # 성공 시
-        return success_response("Login successful")
-    else:
-        # 실패 시
-        return error_response("Invalid credentials", 404) 
+    try:
+        result, status_code = auth_service.login_user(user_id, password)
+        return Response(json.dumps(result, ensure_ascii=False), mimetype='application/json'), status_code
+    except Exception as e:
+        print("로그인 중 예외 발생:", e)
+        traceback.print_exc()
+        error_response = {"message": "서버 오류 발생"}
+        return Response(json.dumps(error_response, ensure_ascii=False), mimetype='application/json'), 500 

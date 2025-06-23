@@ -1,5 +1,15 @@
+import sys
+import os
+
+# 프로젝트 루트 디렉토리를 sys.path에 추가
+project_root = os.path.dirname(os.path.abspath(__file__))
+if os.path.basename(project_root) == 'central_server':
+    project_root = os.path.dirname(project_root)
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 from flask import Flask
-from routes import auth, user, detect_log, video, event_change, dashboard
+from central_server.routes import auth, user, detect_log, video, event_change, dashboard
 
 def create_app():
     app = Flask(__name__)
