@@ -11,7 +11,13 @@ import socket
 import numpy as np
 import struct
 
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from server.config import CENTRAL_IP, CENTRAL_PORT
+
+from style import apply_style
 
 class CCTVWidget(QWidget):
     def __init__(self, parent=None):
@@ -27,7 +33,7 @@ class CCTVWidget(QWidget):
         
         # 네트워크 연결 설정
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.connect((CENTRAL_IP, 7007))
+        self.sock.connect((CENTRAL_IP, 6006))
         # self.sock.connect(('192.168.0.21', 7007))
         self.sock.settimeout(0.1)
         # self.cap = cv2.VideoCapture(0) # 웹캠
@@ -271,6 +277,9 @@ class CCTVWidget(QWidget):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    # QSS 파일 로드
+    apply_style(app)
+
     cctv_widget = CCTVWidget()
     cctv_widget.show()
     sys.exit(app.exec())
