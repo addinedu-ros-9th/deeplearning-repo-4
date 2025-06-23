@@ -25,6 +25,7 @@
    <property name="font">
     <font>
      <family>Inter 18pt</family>
+     <weight>75</weight>
      <bold>true</bold>
     </font>
    </property>
@@ -68,6 +69,7 @@
    <property name="font">
     <font>
      <family>Inter 18pt</family>
+     <weight>75</weight>
      <bold>true</bold>
     </font>
    </property>
@@ -114,6 +116,7 @@
    <property name="font">
     <font>
      <family>Inter 18pt</family>
+     <weight>75</weight>
      <bold>true</bold>
     </font>
    </property>
@@ -160,6 +163,7 @@
    <property name="font">
     <font>
      <family>Inter 18pt</family>
+     <weight>75</weight>
      <bold>true</bold>
     </font>
    </property>
@@ -185,6 +189,7 @@
    <property name="font">
     <font>
      <family>Inter 18pt</family>
+     <weight>75</weight>
      <bold>true</bold>
     </font>
    </property>
@@ -244,6 +249,7 @@
    <property name="font">
     <font>
      <family>Inter 18pt</family>
+     <weight>75</weight>
      <bold>true</bold>
     </font>
    </property>
@@ -254,17 +260,210 @@
     <number>10</number>
    </property>
   </widget>
-  <widget class="QLabel" name="graph_container">
+  <widget class="QLabel" name="graph1_container">
    <property name="geometry">
     <rect>
      <x>20</x>
      <y>116</y>
      <width>360</width>
-     <height>360</height>
+     <height>350</height>
     </rect>
    </property>
    <property name="text">
     <string/>
+   </property>
+  </widget>
+  <widget class="QLabel" name="graph2_container">
+   <property name="geometry">
+    <rect>
+     <x>400</x>
+     <y>116</y>
+     <width>830</width>
+     <height>350</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QLabel" name="graph3_container">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>520</y>
+     <width>1210</width>
+     <height>310</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QLabel" name="graph1">
+   <property name="geometry">
+    <rect>
+     <x>35</x>
+     <y>126</y>
+     <width>320</width>
+     <height>320</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QLabel" name="graph2">
+   <property name="geometry">
+    <rect>
+     <x>420</x>
+     <y>150</y>
+     <width>790</width>
+     <height>250</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QLabel" name="graph3">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>550</y>
+     <width>1210</width>
+     <height>251</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QLabel" name="graph1_text">
+   <property name="geometry">
+    <rect>
+     <x>35</x>
+     <y>121</y>
+     <width>120</width>
+     <height>36</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Inter 18pt</family>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>불법행위 비율</string>
+   </property>
+   <property name="margin">
+    <number>10</number>
+   </property>
+  </widget>
+  <widget class="QLabel" name="graph2_text">
+   <property name="geometry">
+    <rect>
+     <x>415</x>
+     <y>121</y>
+     <width>120</width>
+     <height>36</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Inter 18pt</family>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>불법행위 건수</string>
+   </property>
+   <property name="margin">
+    <number>10</number>
+   </property>
+  </widget>
+  <widget class="QLabel" name="graph3_text">
+   <property name="geometry">
+    <rect>
+     <x>35</x>
+     <y>525</y>
+     <width>201</width>
+     <height>36</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Inter 18pt</family>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>불법행위 시간대별 건수</string>
+   </property>
+   <property name="margin">
+    <number>10</number>
+   </property>
+  </widget>
+  <widget class="QLabel" name="graph1_legend">
+   <property name="geometry">
+    <rect>
+     <x>40</x>
+     <y>419</y>
+     <width>321</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QLabel" name="graph2_legend">
+   <property name="geometry">
+    <rect>
+     <x>655</x>
+     <y>419</y>
+     <width>321</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QLabel" name="graph3_legend">
+   <property name="geometry">
+    <rect>
+     <x>460</x>
+     <y>790</y>
+     <width>321</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="search_btn">
+   <property name="geometry">
+    <rect>
+     <x>1160</x>
+     <y>20</y>
+     <width>70</width>
+     <height>28</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Inter 18pt</family>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>조회</string>
    </property>
   </widget>
  </widget>

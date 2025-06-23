@@ -11,6 +11,11 @@ QPushButton:focus, QPushButton:pressed {
     border-radius: {{radius}};
 }
 
+.btn.small {
+    height: 28px;
+    
+}
+
 .btn.outlined.primary {
     color: {{primary}};
     border: 1px solid {{primary}};

@@ -12,7 +12,7 @@ import numpy as np
 import struct
 from functools import partial
 
-# from style import apply_style
+from style import apply_style
 
 class HorizontalLineDelegate(QStyledItemDelegate):
     def paint(self, painter, option, index):

@@ -1,0 +1,14 @@
+.label {
+    width: 10px;
+    height: 10px;
+    min-width: 10px;
+    min-height: 10px;
+    max-width: 10px;
+    max-height: 10px;
+    border-radius: 5px;
+}
+
+.label.primary { background-color:  {{primary}}; }
+.label.secondary { background-color:  {{secondary}}; }
+.label.therity { background-color:  {{therity}}; }
+.label.fourth { background-color:  {{fourth}}; }
