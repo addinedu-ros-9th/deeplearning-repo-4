@@ -26,11 +26,10 @@ def change_is_checked():
     user_id = data.get('user_id')
     store_name = data.get('store_name')
     timestamp = data.get('timestamp')
-    is_checked = data.get('is_checked')
-    if not all([user_id, store_name, timestamp]) or is_checked is None:
-        return jsonify({"message": "필수 파라미터 누락"}), 404
-    success = update_is_checked(user_id, store_name, timestamp, is_checked)
+    if not all([user_id, store_name, timestamp]):
+        return '', 404
+    success = update_is_checked(user_id, store_name, timestamp, is_checked=1)
     if success:
-        return jsonify({"message": "is_checked updated"}), 200
+        return '', 200
     else:
-        return jsonify({"message": "업데이트 실패"}), 500 
+        return '', 500 
