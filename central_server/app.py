@@ -9,7 +9,7 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from flask import Flask
-from central_server.routes import auth, user, detect_log, video, event_change, dashboard
+from central_server.routes import auth, user, detect_log, video, event_change, dashboard, notification
 
 def create_app():
     app = Flask(__name__)
@@ -21,6 +21,7 @@ def create_app():
     app.register_blueprint(video.bp)
     app.register_blueprint(event_change.bp)
     app.register_blueprint(dashboard.bp)
+    app.register_blueprint(notification.bp)
 
     return app
 
