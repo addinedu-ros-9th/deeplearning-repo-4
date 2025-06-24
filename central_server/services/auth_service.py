@@ -9,7 +9,7 @@ def login_user(user_id, password):
         cursor = conn.cursor(dictionary=True)
         
         # 1. 아이디 존재 여부 확인
-        query_id = "SELECT user_id, password FROM users WHERE user_id = %s"
+        query_id = "SELECT user_id, password FROM user WHERE user_id = %s"
         cursor.execute(query_id, (user_id,))
         user = cursor.fetchone()
         
