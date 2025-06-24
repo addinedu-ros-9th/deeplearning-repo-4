@@ -11,7 +11,6 @@ import socket
 import numpy as np
 import struct
 import requests
-
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -64,25 +63,10 @@ class CCTVWidget(QWidget):
         column = ["기록 시점", "불법행위 종류", "녹화 클립"]
         self.original_data = [
             {
-                "event_type": "broken",
-                "time": "2025-06-23 16:00:00",
-                "video_url": "video_201.mp4"
+                "time": "",
+                "event_type": "",
+                "video_url": ""
             },
-            {
-                "event_type": "theft",
-                "time": "2025-06-23 18:30:00",
-                "video_url": "video_202.mp4"
-            },
-            {
-                "event_type": "abandon",
-                "time": "2025-06-23 22:45:00",
-                "video_url": "video_203.mp4"
-            },
-            {
-                "event_type": "light_off",
-                "time": "2025-06-24 03:15:00",
-                "video_url": "video_204.mp4"
-            }
         ]
         self.data = self.original_data.copy()
 
@@ -94,16 +78,16 @@ class CCTVWidget(QWidget):
         self.detect_table.setHorizontalHeaderLabels(column)
 
         for row, row_data in enumerate(self.data):
-            for col, value in enumerate(row_data):
+            for col, value in enumerate(row_data.values()):
                 if col == 1: # 불법행위 comboBox 종류 열
                     behavior_label = QLabel(value)
-                    if value == "파손" : 
+                    if value == "broken" : 
                         behavior_label.setProperty("class", "label behavior broken")
-                    elif value == "유기" :
+                    elif value == "abandon" :
                         behavior_label.setProperty("class", "label behavior abandon")
-                    elif value == "절도" :
+                    elif value == "theft" :
                         behavior_label.setProperty("class", "label behavior theft")
-                    elif value == "전등 끔" :
+                    elif value == "light_off" :
                         behavior_label.setProperty("class", "label behavior light_off")
                         
                     behavior_label.setAlignment(Qt.AlignmentFlag.AlignCenter)  # 가운데 정렬
@@ -120,7 +104,7 @@ class CCTVWidget(QWidget):
                 elif col == 2:  # 녹화 클립 열
                     delete_button = QPushButton("")
                     delete_button.setProperty("class", "btn clip small")
-                     # 삭제 버튼을 가운데 정렬하기 위한 레이아웃 설정
+                    # 삭제 버튼을 가운데 정렬하기 위한 레이아웃 설정
                     layout = QHBoxLayout()
                     layout.addWidget(delete_button)
                     layout.setAlignment(Qt.AlignmentFlag.AlignCenter)  # 가운데 정렬
@@ -153,35 +137,60 @@ class CCTVWidget(QWidget):
     def refresh(self):
         print("cctv refesh")
         self.title.setText(get_user_info()['store_name'])
-        self.original_data = self.get_notification_data()
-        self.dataChange()
+        self.get_notification_data()
+        self.dataChange()     
+
+    def get_notification_data(self):
+        url = f"http://{CENTRAL_IP}:{CENTRAL_PORT}/load/notification"
+        req_data = {
+            "user_id": get_user_id(),
+        }
+        print("req_data:", req_data)
+        try:
+            response = requests.post(url, json=req_data)
+            if response.status_code == 200:
+                result = response.json()
+                print("[cctv 알림 - 응답 내용]:", result)
+                self.original_data = result
+                self.data = self.original_data.copy()  # 초기 데이터 복사
+                # return result
+            else:
+                print(f"요청 실패: {response.status_code}")
+                return {}
+        except requests.RequestException as e:
+            print(f"요청 중 오류 발생: {e}")
+            return {}
 
     def dataChange(self):
         if self.comboBox.currentText() == "전체":
-            self.data = self.original_data.copy()
+            self.data = self.original_data
         elif self.comboBox.currentText() == "파손":
-            self.data = [row for row in self.original_data if row[1] == "파손"]
+            self.data = [row for row in self.original_data if row.get("event_type") == "broken"]
         elif self.comboBox.currentText() == "유기":
-            self.data = [row for row in self.original_data if row[1] == "유기"]
+            self.data = [row for row in self.original_data if row.get("event_type") == "abandon"]
         elif self.comboBox.currentText() == "절도":
-            self.data = [row for row in self.original_data if row[1] == "절도"]
+            self.data = [row for row in self.original_data if row.get("event_type") == "theft"]
         elif self.comboBox.currentText() == "전등 끔":
-            self.data = [row for row in self.original_data if row[1] == "전등 끔"]
+            self.data = [row for row in self.original_data if row.get("event_type") == "light_off"]
 
         self.detect_table.setRowCount(len(self.data))  # 필터링된 데이터 행 개수만큼 설정
-        
+        print('self.data: ', self.data)
         for row, row_data in enumerate(self.data):
-            for col, value in enumerate(row_data):
+            for col, value in enumerate(row_data.values()):
                 if col == 1:  # 불법행위 comboBox 종류 열
                     behavior_label = QLabel(value)
-                    if value == "파손":
+                    if value == "broken":
                         behavior_label.setProperty("class", "label behavior broken")
-                    elif value == "유기":
+                        behavior_label.setText("파손")
+                    elif value == "abandon":
                         behavior_label.setProperty("class", "label behavior abandon")
-                    elif value == "절도":
+                        behavior_label.setText("유기")
+                    elif value == "theft":
                         behavior_label.setProperty("class", "label behavior theft")
-                    elif value == "전등 끔":
+                        behavior_label.setText("절도")
+                    elif value == "light_off":
                         behavior_label.setProperty("class", "label behavior light_off")
+                        behavior_label.setText("전등 끔")
 
                     behavior_label.setAlignment(Qt.AlignmentFlag.AlignCenter)  # 가운데 정렬
 
@@ -209,29 +218,7 @@ class CCTVWidget(QWidget):
                     self.detect_table.setCellWidget(row, col, cell_widget)
                 else:  # 기록 시점 열
                     item = QTableWidgetItem(value)
-                    self.detect_table.setItem(row, col, item)        
-
-    def get_notification_data(self):
-        url = f"http://{CENTRAL_IP}:{CENTRAL_PORT}/load/notification"
-        req_data = {
-            "user_id": get_user_id(),
-        }
-        print("req_data:", req_data)
-        try:
-            response = requests.post(url, json=req_data)
-            print("response.text:", response.text)  # 응답 원문 출력
-            if response.status_code == 200:
-                result = response.json()
-                print("[cctv 알림 - 응답 내용]:", result)
-                self.original_data = result.get('data', [])
-                # return result.get('data', {})
-            else:
-                print(f"요청 실패: {response.status_code}")
-                return {}
-        except requests.RequestException as e:
-            print(f"요청 중 오류 발생: {e}")
-            return {}
-
+                    self.detect_table.setItem(row, col, item)   
 
     def showEvent(self, event):
         # 화면에 보일 때만 타이머 시작
