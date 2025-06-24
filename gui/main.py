@@ -15,6 +15,7 @@ from PyQt6.QtGui import *
 from PyQt6.QtCore import *
 from style import apply_style
 
+from modules.user_info import *
 
 class MainApp(QMainWindow):
     def __init__(self):
@@ -43,7 +44,8 @@ class MainApp(QMainWindow):
     def show_layout_window(self):
         # LayoutWindow로 화면 전환
         self.central_widget.setCurrentWidget(self.layout_window)
-
+        self.layout_window.refresh()
+        
     def show_login_window(self):
         # LoginWindow로 화면 전환
         self.central_widget.setCurrentWidget(self.login_window)

@@ -39,6 +39,7 @@
     <property name="font">
      <font>
       <family>Inter 18pt</family>
+      <weight>50</weight>
       <bold>false</bold>
      </font>
     </property>
@@ -58,6 +59,7 @@
     <property name="font">
      <font>
       <family>Inter 18pt</family>
+      <weight>75</weight>
       <bold>true</bold>
      </font>
     </property>
@@ -135,7 +137,7 @@
     <property name="geometry">
      <rect>
       <x>70</x>
-      <y>488</y>
+      <y>498</y>
       <width>400</width>
       <height>1</height>
      </rect>
@@ -148,7 +150,7 @@
     <property name="geometry">
      <rect>
       <x>70</x>
-      <y>508</y>
+      <y>518</y>
       <width>400</width>
       <height>19</height>
      </rect>
@@ -182,7 +184,7 @@
     <property name="geometry">
      <rect>
       <x>70</x>
-      <y>532</y>
+      <y>542</y>
       <width>400</width>
       <height>44</height>
      </rect>
@@ -198,7 +200,7 @@
     <property name="geometry">
      <rect>
       <x>70</x>
-      <y>656</y>
+      <y>676</y>
       <width>400</width>
       <height>50</height>
      </rect>
@@ -206,6 +208,7 @@
     <property name="font">
      <font>
       <family>Inter 18pt</family>
+      <weight>50</weight>
       <bold>false</bold>
      </font>
     </property>
@@ -217,7 +220,7 @@
     <property name="geometry">
      <rect>
       <x>70</x>
-      <y>616</y>
+      <y>636</y>
       <width>181</width>
       <height>25</height>
      </rect>
@@ -235,13 +238,55 @@
     <property name="geometry">
      <rect>
       <x>70</x>
-      <y>596</y>
+      <y>616</y>
       <width>400</width>
       <height>1</height>
      </rect>
     </property>
     <property name="text">
      <string/>
+    </property>
+   </widget>
+   <widget class="QLabel" name="auth_text1">
+    <property name="geometry">
+     <rect>
+      <x>70</x>
+      <y>473</y>
+      <width>400</width>
+      <height>19</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Inter 18pt</family>
+     </font>
+    </property>
+    <property name="text">
+     <string>아이디를 정확히 입력해주세요.</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="auth_text2">
+    <property name="geometry">
+     <rect>
+      <x>70</x>
+      <y>587</y>
+      <width>400</width>
+      <height>19</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Inter 18pt</family>
+     </font>
+    </property>
+    <property name="text">
+     <string>비밀번호를 정확히 입력해주세요.</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
     </property>
    </widget>
   </widget>
@@ -251,7 +296,7 @@
      <x>0</x>
      <y>0</y>
      <width>1440</width>
-     <height>23</height>
+     <height>24</height>
     </rect>
    </property>
   </widget>

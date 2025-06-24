@@ -29,6 +29,7 @@
 .color-gray9 { color: #999;  }
 .color-gray9.active { color: #333; }
 .color-grayc { color: #ccc;  }
+.color-error   { color: {{error}}; }
 .color-primary      { color: {{primary}};      }
 .color-primary_dark { color: {{primary_dark}}; }
 .color-secondary    { color: {{secondary}};    }

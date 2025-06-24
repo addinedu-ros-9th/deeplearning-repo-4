@@ -15,6 +15,8 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from modules.user_info import *
+
 from server.config import CENTRAL_IP, CENTRAL_PORT
 
 from style import apply_style
@@ -196,6 +198,10 @@ class CCTVWidget(QWidget):
         self.detect_table.verticalHeader().setVisible(False)
         # 그리드 라인 제거
         self.detect_table.setShowGrid(False) 
+
+    def refresh(self):
+        print("cctv refesh called")
+        self.title.setText(get_user_info()['store_name'])
 
     def showEvent(self, event):
         # 화면에 보일 때만 타이머 시작
