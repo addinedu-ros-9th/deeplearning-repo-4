@@ -63,21 +63,26 @@ class CCTVWidget(QWidget):
         # 열 헤더 설정
         column = ["기록 시점", "불법행위 종류", "녹화 클립"]
         self.original_data = [
-            ["2023-06-21 14:30", "파손", "./video01.mp4"],
-            ["2023-06-21 14:30", "유기", "./video01.mp4"],
-            ["2023-06-21 14:30", "파손", "./video01.mp4"],
-            ["2023-06-21 14:30", "전등 끔", "./video01.mp4"],
-            ["2023-06-21 14:30", "절도", "./video01.mp4"],
-            ["2023-06-21 14:30", "파손", "./video01.mp4"],
-            ["2023-06-21 14:30", "유기", "./video01.mp4"],
-            ["2023-06-21 14:30", "파손", "./video01.mp4"],
-            ["2023-06-21 14:30", "전등 끔", "./video01.mp4"],
-            ["2023-06-21 14:30", "절도", "./video01.mp4"],
-            ["2023-06-21 14:30", "파손", "./video01.mp4"],
-            ["2023-06-21 14:30", "유기", "./video01.mp4"],
-            ["2023-06-21 14:30", "파손", "./video01.mp4"],
-            ["2023-06-21 14:30", "전등 끔", "./video01.mp4"],
-            ["2023-06-21 14:30", "절도", "./video01.mp4"],
+            {
+                "event_type": "broken",
+                "time": "2025-06-23 16:00:00",
+                "video_url": "video_201.mp4"
+            },
+            {
+                "event_type": "theft",
+                "time": "2025-06-23 18:30:00",
+                "video_url": "video_202.mp4"
+            },
+            {
+                "event_type": "abandon",
+                "time": "2025-06-23 22:45:00",
+                "video_url": "video_203.mp4"
+            },
+            {
+                "event_type": "light_off",
+                "time": "2025-06-24 03:15:00",
+                "video_url": "video_204.mp4"
+            }
         ]
         self.data = self.original_data.copy()
 
@@ -209,15 +214,17 @@ class CCTVWidget(QWidget):
     def get_notification_data(self):
         url = f"http://{CENTRAL_IP}:{CENTRAL_PORT}/load/notification"
         req_data = {
-            "user_id": user_id,
+            "user_id": get_user_id(),
         }
-
+        print("req_data:", req_data)
         try:
             response = requests.post(url, json=req_data)
+            print("response.text:", response.text)  # 응답 원문 출력
             if response.status_code == 200:
                 result = response.json()
                 print("[cctv 알림 - 응답 내용]:", result)
-                return result.get('data', {})
+                self.original_data = result.get('data', [])
+                # return result.get('data', {})
             else:
                 print(f"요청 실패: {response.status_code}")
                 return {}
