@@ -635,9 +635,11 @@ def realtime_anomaly_detection(model_path, pose_model_path='yolov8n-pose.pt', se
                             if abnormal_preds:
                                 major_action = Counter(abnormal_preds).most_common(1)[0][0]
                                 action_name = LABEL_NAMES[major_action]
-                                
-                                # 클립 데이터를 메모리에서 직접 Central 서버로 전송
-                                send_clip_frames_to_central_server(clip_frames, action_name, current_clip_max_persons, dt_str)
+                                # major_action의 confidence 구하기
+                                confidence = probs[major_action] if 'probs' in locals() else 1.0
+                                confidence_str = f"{confidence:.2f}"
+                                # 파일명에 confidence 포함
+                                send_clip_frames_to_central_server(clip_frames, action_name, current_clip_max_persons, dt_str, confidence_str)
                             else:
                                 print("Clip was mostly Normal, so it was not sent.")
                             
@@ -683,8 +685,8 @@ def realtime_anomaly_detection(model_path, pose_model_path='yolov8n-pose.pt', se
         cv2.destroyAllWindows()
         print("UDP connection closed")
 
-def send_clip_frames_to_central_server(clip_frames, action_name, person_count, timestamp_str):
-    """프레임들을 비디오로 인코딩하여 Central 서버로 전송"""
+def send_clip_frames_to_central_server(clip_frames, action_name, person_count, timestamp_str, confidence_str):
+    """프레임들을 비디오로 인코딩하여 Central 서버로 전송 (confidence 포함)"""
     global tcp_sock, frame_counter
     if not ensure_tcp_connection():
         print("[AI 서버] Central 서버 연결 실패 - 클립 전송 불가")
@@ -701,8 +703,7 @@ def send_clip_frames_to_central_server(clip_frames, action_name, person_count, t
         
         # 첫 번째 프레임의 크기로 비디오 라이터 생성
         height, width = clip_frames[0].shape[:2]
-        out = cv2.VideoWriter(temp_filename, fourcc, 5, (width, height))
-        
+        out = cv2.VideoWriter(temp_filename, cv2.VideoWriter.fourcc(*'mp4v'), 5, (width, height))
         if not out.isOpened():
             print("[AI 서버] 비디오 라이터 생성 실패")
             return
@@ -724,10 +725,9 @@ def send_clip_frames_to_central_server(clip_frames, action_name, person_count, t
             'action_name': action_name,
             'person_count': person_count,
             'timestamp': timestamp_str,
-            'frame_count': len(clip_frames)
+            'frame_count': len(clip_frames),
+            'confidence': confidence_str
         }
-        
-        # 메타데이터를 JSON으로 직렬화
         metadata_json = json.dumps(metadata).encode('utf-8')
         metadata_size = len(metadata_json)
         
@@ -743,11 +743,9 @@ def send_clip_frames_to_central_server(clip_frames, action_name, person_count, t
         packet = header + metadata_json + clip_data
         
         tcp_sock.sendall(packet)
-        print(f"[AI 서버] Central 서버로 클립 전송: {action_name}_p{person_count}_{timestamp_str}, 크기: {data_size} bytes")
-        
-        # 카운터 증가
+        # 파일명에 confidence 포함해서 로그 출력
+        print(f"[AI 서버] Central 서버로 클립 전송: {action_name}_p{person_count}_{confidence_str}_{timestamp_str}, 크기: {data_size} bytes")
         frame_counter += 1
-        
     except Exception as e:
         print(f"[AI 서버] 클립 전송 오류: {e}")
         if tcp_sock:
