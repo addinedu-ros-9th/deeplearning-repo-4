@@ -6,6 +6,7 @@ import numpy as np
 import struct
 import os
 import json
+from server.database.db import insert_clip
 
 # AI 서버로부터 수신
 AI_PORT = 6006
@@ -50,6 +51,7 @@ def handle_ai(ai_conn):
                     action_name = metadata['action_name']
                     person_count = metadata['person_count']
                     timestamp_str = metadata['timestamp']
+                    confidence = metadata['confidence']
                     
                     # 클립 저장 디렉토리 생성
                     clips_dir = "received_clips"
@@ -57,10 +59,27 @@ def handle_ai(ai_conn):
                         os.makedirs(clips_dir)
                     
                     # 의미있는 파일명으로 저장
-                    clip_filename = os.path.join(clips_dir, f"{action_name}_p{person_count}_{timestamp_str}.mp4")
+                    clip_filename = os.path.join(clips_dir, f"{action_name}_p{person_count}_{confidence}_{timestamp_str}.mp4")
                     with open(clip_filename, 'wb') as f:
                         f.write(video_data)
                     print(f"[Central] 클립 저장됨: {clip_filename}")
+
+                    # DB에 정보 저장
+                    store_name = "아이스크림 할인점 가산점"      # 실제 매장명으로 교체
+                    cctv_no = 1               # 실제 cctv 번호로 교체
+                    is_checked = 0            # 기본값
+
+                    video_url = os.path.basename(clip_filename)
+                    insert_clip(
+                        store_name,
+                        cctv_no,
+                        metadata['timestamp'],
+                        metadata['action_name'],
+                        metadata['confidence'],
+                        metadata['person_count'],
+                        is_checked,
+                        video_url
+                    )
                 else:
                     print(f"[Central] 프레임 데이터 수신 (저장하지 않음): {data_size} bytes")
                     
