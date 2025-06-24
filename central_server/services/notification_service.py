@@ -31,8 +31,8 @@ def get_24h_logs(user_id):
         result = []
         for log in logs:
             result.append({
-                "event_type": log['event_type'],
                 "time": log['time'].strftime('%Y-%m-%d %H:%M:%S') if isinstance(log['time'], datetime) else str(log['time']),
+                "event_type": log['event_type'],
                 "video_url": log['video_url']
             })
         return result
