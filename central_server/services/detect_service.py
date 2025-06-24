@@ -1,5 +1,5 @@
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
 from central_server.database.db import get_connection
 
 def get_weekly_logs(user_id):
@@ -47,43 +47,88 @@ def get_filtered_logs(filters):
     cursor = conn.cursor(dictionary=True)
 
     base_query = """
-        SELECT s.store_name, d.timestamp, d.event_type, d.person_count, d.is_checked, d.video_url
-        FROM detection_logs d
+        SELECT s.store_name, d.time, d.event_type, d.person_count, d.is_checked, d.video_url
+        FROM cctv_data d
         JOIN store s ON d.store_id = s.store_id
+        WHERE 1=1
     """
     where_clauses = []
     params = []
 
-    # 필터 조건에 따라 WHERE 절 동적 생성
-    if filters.get('store_id'):
-        where_clauses.append("d.store_id = %s")
-        params.append(filters.get('store_id'))
-    if filters.get('event_type'):
-        where_clauses.append("d.event_type = %s")
-        params.append(filters.get('event_type'))
-    if filters.get('start_date'):
-        where_clauses.append("d.timestamp >= %s")
-        params.append(filters.get('start_date'))
-    if filters.get('end_date'):
-        where_clauses.append("d.timestamp < DATE_ADD(%s, INTERVAL 1 DAY)")
-        params.append(filters.get('end_date'))
-    if 'is_checked' in filters:
-        where_clauses.append("d.is_checked = %s")
-        params.append(filters.get('is_checked'))
+    # user_id 필터
+    if filters.get('user_id'):
+        where_clauses.append("s.user_id = %s")
+        params.append(filters['user_id'])
 
+    # 기간 필터
+    period = filters.get('period')
+    start_date = filters.get('start_date')
+    end_date = filters.get('end_date')
+
+    if start_date and end_date:
+        # YYYYMMDD → YYYY-MM-DD 변환
+        start = datetime.strptime(start_date, "%Y%m%d")
+        end = datetime.strptime(end_date, "%Y%m%d") + timedelta(days=1)
+        where_clauses.append("d.time >= %s AND d.time < %s")
+        params.extend([start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")])
+    elif period:
+        today = datetime.now().date()
+        if period == "today":
+            start = today
+            end = today + timedelta(days=1)
+        elif period == "week":
+            start = today - timedelta(days=today.weekday())
+            end = start + timedelta(days=7)
+        elif period == "month":
+            start = today.replace(day=1)
+            if start.month == 12:
+                end = start.replace(year=start.year+1, month=1)
+            else:
+                end = start.replace(month=start.month+1)
+        else:
+            start = None
+            end = None
+        if start and end:
+            where_clauses.append("d.time >= %s AND d.time < %s")
+            params.extend([start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")])
+
+    # event_type (여러 개)
+    if filters.get('event_type'):
+        event_types = filters['event_type']
+        if isinstance(event_types, list) and event_types:
+            placeholders = ','.join(['%s'] * len(event_types))
+            where_clauses.append(f"d.event_type IN ({placeholders})")
+            params.extend(event_types)
+
+    # person_count (여러 개)
+    if filters.get('person_count'):
+        person_counts = filters['person_count']
+        if isinstance(person_counts, list) and person_counts:
+            placeholders = ','.join(['%s'] * len(person_counts))
+            where_clauses.append(f"d.person_count IN ({placeholders})")
+            params.extend(person_counts)
+
+    # is_checked (여러 개)
+    if filters.get('is_checked'):
+        is_checked = filters['is_checked']
+        if isinstance(is_checked, list) and is_checked:
+            placeholders = ','.join(['%s'] * len(is_checked))
+            where_clauses.append(f"d.is_checked IN ({placeholders})")
+            params.extend(is_checked)
+
+    # 최종 쿼리 조립
     query = base_query
     if where_clauses:
-        query += " WHERE " + " AND ".join(where_clauses)
-    
-    query += " ORDER BY d.timestamp DESC"
+        query += " AND " + " AND ".join(where_clauses)
+    query += " ORDER BY d.time DESC"
 
     try:
         cursor.execute(query, tuple(params))
         logs = cursor.fetchall()
-        # datetime 객체를 json으로 변환 가능하게 문자열로 변경
+        # datetime 객체를 문자열로 변환
         for log in logs:
-            if 'timestamp' in log and hasattr(log['timestamp'], 'strftime'):
-                log['timestamp'] = log['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
+            if 'time' in log and hasattr(log['time'], 'strftime'):
+                log['time'] = log['time'].strftime('%Y-%m-%d %H:%M:%S')
         return logs
     finally:
         cursor.close()

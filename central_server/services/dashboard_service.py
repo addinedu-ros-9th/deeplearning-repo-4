@@ -1,5 +1,78 @@
-def get_stats_data(user_id, date):
-    """요청된 월의 통계 데이터를 생성하여 반환합니다."""
-    # TODO: DB에서 해당 사용자와 날짜에 맞는 통계 데이터 집계
-    print(f"DashboardService: Getting stats for {user_id} on {date}")
-    return {"message": "Stats data"} 
+from central_server.database.db import get_connection
+from collections import defaultdict
+
+def get_status_data(user_id, date):
+    """
+    user_id와 date(YYYYMM)로 해당 월의 event_type별 count, ratio, 2시간 단위 time_distribution을 집계하여 반환합니다.
+    """
+    event_types = ['broken', 'abandon', 'theft', 'light_off']
+    # 2시간 단위 구간
+    time_slots = [f"{str(h).zfill(2)}-{str(h+2).zfill(2)}" for h in range(0, 24, 2)]
+    result = {
+        "user_id": user_id,
+        "event_types": event_types,
+        "monthly_stats": []
+    }
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        # 최근 12개월(요청 월 포함) 데이터 조회
+        year = int(date[:4])
+        month = int(date[4:])
+        months = []
+        for i in range(12):
+            m = month - i
+            y = year
+            if m <= 0:
+                m += 12
+                y -= 1
+            months.append((y, m))
+        months = months[::-1]  # 과거→현재 순
+
+        # user_id로 store_name 찾기
+        cursor.execute("SELECT store_name FROM store WHERE user_id = %s", (user_id,))
+        store_row = cursor.fetchone()
+        if not store_row:
+            return result
+        store_name = store_row['store_name']
+
+        for y, m in months:
+            ym = f"{y}-{str(m).zfill(2)}"
+            # event_type별 count
+            count_dict = {etype: 0 for etype in event_types}
+            slot_dict = {slot: [0]*len(event_types) for slot in time_slots}
+            # 해당 월 데이터 조회
+            query = f"""
+                SELECT event_type, time
+                FROM cctv_data
+                WHERE store_name = %s AND DATE_FORMAT(time, '%Y-%m') = %s
+            """
+            cursor.execute(query, (store_name, ym))
+            rows = cursor.fetchall()
+            total = 0
+            for row in rows:
+                etype = row['event_type']
+                t = row['time']
+                if etype not in event_types:
+                    continue
+                idx = event_types.index(etype)
+                count_dict[etype] += 1
+                total += 1
+                hour = t.hour if hasattr(t, 'hour') else int(str(t)[11:13])
+                slot = f"{str((hour//2)*2).zfill(2)}-{str(((hour//2)*2)+2).zfill(2)}"
+                if slot in slot_dict:
+                    slot_dict[slot][idx] += 1
+            # 비율 계산
+            ratio = [round((count_dict[etype]/total)*100) if total else 0 for etype in event_types]
+            # time_distribution dict
+            time_distribution = {slot: slot_dict[slot] for slot in time_slots}
+            result["monthly_stats"].append({
+                "month": ym,
+                "count": [count_dict[etype] for etype in event_types],
+                "ratio": ratio,
+                "time_distribution": time_distribution
+            })
+        return result
+    finally:
+        cursor.close()
+        conn.close() 
