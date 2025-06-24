@@ -7,7 +7,8 @@ from PyQt6.QtGui import *
 from PyQt6.QtCore import *
 from PyQt6.QtWidgets import *
 
-from modules.user_info import user_info
+from modules.user_info import *
+
 
 from cctv import CCTVWidget
 from dashboard import DashboardWidget
@@ -65,6 +66,8 @@ class LayoutWindow(QMainWindow):
         self.locDepth1.setText("전체 매장")
         self.userBtn.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         # self.userBtn.setText(super().user_id)
+
+        # set_user_info(user)  # 사용자 정보 설정
 
         # 클래스 지정      
         self.menuBtn1.setProperty("class", "menuBtn1 active")
