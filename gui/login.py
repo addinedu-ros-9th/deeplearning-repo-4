@@ -64,90 +64,103 @@ class LoginWindow(QMainWindow):
 
     def check_login(self):
         # login_textfield1에 입력된 값 확인
-        id_input = self.login_textfield1.text()
-        pw_input = self.login_textfield2.text()
+        # id_input = self.login_textfield1.text()
+        # pw_input = self.login_textfield2.text()
 
-        user_exists = check_user_id(id_input)
-        check_pw = check_user_pw(id_input, pw_input)
+        # user_exists = check_user_id(id_input)
+        # check_pw = check_user_pw(id_input, pw_input)
 
-        print(f"User input: {id_input}")
-        if user_exists:
-            if check_pw:
-                if not self.login_checkbox.isChecked():
-                    self.login_textfield1.clear() # 수정해야됨
-                    self.login_textfield2.clear()
-                # 로그인 성공 처리
-                print("Login successful!")
+        # print(f"User input: {id_input}")
+        # if user_exists:
+        #     if check_pw:
+        #         if not self.login_checkbox.isChecked():
+        #             self.login_textfield1.clear() # 수정해야됨
+        #             self.login_textfield2.clear()
+        #         # 로그인 성공 처리
+        #         print("Login successful!")
+        #         self.login_successful.emit()
+        #         set_user(id_input)  # 사용자 정보 가져오기
+        #     else : 
+        #         print("Invalid password.")
+        #         self.login_textfield2.setProperty("class", "textfield large error")
+        #         self.login_textfield2.style().unpolish(self.login_textfield2)
+        #         self.login_textfield2.style().polish(self.login_textfield2)
+        #         self.login_textfield2.update() 
+        # else:
+        #     print("Invalid username.")
+        #     self.login_textfield1.setProperty("class", "textfield large error")
+        #     self.login_textfield1.style().unpolish(self.login_textfield1)
+        #     self.login_textfield1.style().polish(self.login_textfield1)
+        #     self.login_textfield1.update() 
+        
+        # # 텍스트 필드 포커스 제거
+        # self.login_textfield1.clearFocus()
+        # self.login_textfield2.clearFocus()
+
+        user_id = self.login_textfield1.text()
+        user_pw = self.login_textfield2.text()
+
+        # 서버 요청
+        url = f"http://{CENTRAL_IP}:{CENTRAL_PORT}/auth/login"
+        data = {
+            "user_id": user_id,
+            "passwd": user_pw
+        }
+
+        print("[로그인 요청 URL]:", url)
+        print("[전송 데이터]:", data)
+
+        try:
+            response = requests.post(url, json=data)
+            print("[응답 코드]:", response.status_code)
+
+            if response.status_code == 200:
+                result = response.json()
+                print("[응답 내용]:", result)
+
+                # user_info = result.get("user")
+                # if not user_info or "user_id" not in user_info:
+                #     QMessageBox.warning(self, "오류", "로그인 응답에 사용자 정보가 없습니다.")
+                #     return
+
+                # logged_in_user_id = user_info["user_id"]
+
+                # self.label_error.setText("")
+                QMessageBox.information(self, "로그인 성공", f"{user_id}님 환영합니다!")
                 self.login_successful.emit()
-                set_user(id_input)  # 사용자 정보 가져오기
-            else : 
-                print("Invalid password.")
+                # self.main_window = MainMonitorWindow(user_id=logged_in_user_id)
+                # self.main_window.show()
+                # self.close()
+            elif response.status_code == 401:
+                # 텍스트 필드 포커스 제거
+                self.login_textfield1.clearFocus()
+                self.login_textfield2.clearFocus()
+
+                error_msg = response.json().get("message", "로그인 실패")
+                print(f'ID 오류 : {error_msg}')
+
+                # 실패 메세지 표시
+                self.login_textfield1.setProperty("class", "textfield large error")
+                self.login_textfield1.style().unpolish(self.login_textfield1)
+                self.login_textfield1.style().polish(self.login_textfield1)
+                self.login_textfield1.update() 
+            elif response.status_code == 402:
+                # 텍스트 필드 포커스 제거
+                self.login_textfield1.clearFocus()
+                self.login_textfield2.clearFocus()
+
+                error_msg = response.json().get("message", "로그인 실패")
+                print(f'PW 오류 : {error_msg}')
+
+                # 실패 메세지 표시
                 self.login_textfield2.setProperty("class", "textfield large error")
                 self.login_textfield2.style().unpolish(self.login_textfield2)
                 self.login_textfield2.style().polish(self.login_textfield2)
-                self.login_textfield2.update() 
-        else:
-            print("Invalid username.")
-            self.login_textfield1.setProperty("class", "textfield large error")
-            self.login_textfield1.style().unpolish(self.login_textfield1)
-            self.login_textfield1.style().polish(self.login_textfield1)
-            self.login_textfield1.update() 
-        
-        # 텍스트 필드 포커스 제거
-        self.login_textfield1.clearFocus()
-        self.login_textfield2.clearFocus()
+                self.login_textfield2.update()
 
-        # user_id = self.login_textfield1.text()
-        # user_pw = self.login_textfield2.text()
-
-        # # 서버 요청
-        # url = f"http://{CENTRAL_IP}:{CENTRAL_PORT}/auth/login"
-        # data = {
-        #     "user_id": user_id,
-        #     "passwd": user_pw
-        # }
-
-        # print("[로그인 요청 URL]:", url)
-        # print("[전송 데이터]:", data)
-
-        # try:
-        #     response = requests.post(url, json=data)
-        #     print("[응답 코드]:", response.status_code)
-
-        #     if response.status_code == 200:
-        #         result = response.json()
-        #         print("[응답 내용]:", result)
-
-        #         user_info = result.get("user")
-        #         if not user_info or "user_id" not in user_info:
-        #             QMessageBox.warning(self, "오류", "로그인 응답에 사용자 정보가 없습니다.")
-        #             return
-
-        #         logged_in_user_id = user_info["user_id"]
-
-        #         # 검색 성공했지만 없는 정보로 403이 나온 경우(복수)
-        #         user_detail_url = "http://34.64.53.123:9999/main/user-detail-info"
-        #         detail_response = requests.post(user_detail_url, json={"user_id": logged_in_user_id})
-        #         print("[DEBUG] user-detail-info 응답코드:", detail_response.status_code)
-        #         if detail_response.status_code == 403:
-        #             result = detail_response.json()
-        #             message = result.get("message", "신청 대기 상황입니다.")
-        #             QMessageBox.information(self, "신청 대기", message)
-        #             return
-
-        #         self.label_error.setText("")
-        #         QMessageBox.information(self, "로그인 성공", f"{logged_in_user_id}님 환영합니다!")
-
-        #         self.main_window = MainMonitorWindow(user_id=logged_in_user_id)
-        #         self.main_window.show()
-        #         self.close()
-        #     else:
-        #         error_msg = response.json().get("message", "로그인 실패")
-        #         self.label_error.setText(error_msg)
-
-        # except Exception as e:
-        #     print("[네트워크 예제]:", str(e))
-        #     QMessageBox.critical(self, "네트워크 오류", str(e))
+        except Exception as e:
+            print("[네트워크 예제]:", str(e))
+            QMessageBox.critical(self, "네트워크 오류", str(e))
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

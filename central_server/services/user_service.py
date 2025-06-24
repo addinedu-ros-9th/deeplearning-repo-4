@@ -9,7 +9,7 @@ def get_user_private_info(user_id):
         # users 테이블과 store 테이블을 JOIN하여 사용자 정보와 매장명을 함께 조회
         query = """
             SELECT u.name, u.email, s.store_name
-            FROM users u
+            FROM user u
             JOIN store s ON u.user_id = s.user_id
             WHERE u.user_id = %s
         """

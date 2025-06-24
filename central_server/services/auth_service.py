@@ -8,7 +8,14 @@ def login_user(user_id, password):
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
         
-        query = "SELECT user_id FROM users WHERE user_id = %s AND password = %s"
+        id_query = "SELECT user_id FROM user WHERE user_id = %s"
+        cursor.execute(id_query, (user_id,))
+        user_exists = cursor.fetchone()
+        if not user_exists:
+            print(f"AuthService: User '{user_id}' does not exist.")
+            return {"status": "error", "message": "User does not exist"}, 401
+        
+        query = "SELECT user_id FROM user WHERE user_id = %s AND password = %s"
         cursor.execute(query, (user_id, password))
         user = cursor.fetchone()
         
@@ -17,7 +24,7 @@ def login_user(user_id, password):
             return {"status": "success", "message": "Login successful"}, 200
         else:
             print(f"AuthService: User '{user_id}' authentication failed.")
-            return {"status": "error", "message": "Invalid credentials"}, 401
+            return {"status": "error", "message": "Invalid credentials"}, 402
 
     except Exception as e:
         print(f"AuthService: Database error - {e}")
