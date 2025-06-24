@@ -140,11 +140,8 @@ class LoginWindow(QMainWindow):
                 }
                 # 사용자 정보 요청
                 user_info_response = requests.post(user_info_url, json=user_info_data)
-                print("[요청유저정보]", user_info_data)
-                print("[사용자 정보 요청 URL]:", user_info_url)
                 if user_info_response.status_code == 200: # 사용자 정보 조회 성공
                     user_info_result = user_info_response.json()
-                    print("[사용자 정보 응답 내용]:", user_info_result.get('data', {}))
                     set_user_id(user_id)  # 사용자 ID 저장
                     set_user_info(user_info_result.get('data', {}))  # 사용자 정보 저장
 

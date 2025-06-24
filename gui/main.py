@@ -8,7 +8,7 @@ if project_root not in sys.path:
 
 from PyQt6.QtWidgets import *
 from login import LoginWindow
-from layout import LayoutWindow, UserPopover, NotiPopover
+from layout import LayoutWindow, UserPopover
 from PyQt6.uic import loadUi
 from PyQt6 import *
 from PyQt6.QtGui import *

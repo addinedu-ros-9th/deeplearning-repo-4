@@ -76,7 +76,7 @@
     </font>
    </property>
    <property name="text">
-    <string>Detect Log</string>
+    <string>Notification</string>
    </property>
    <property name="margin">
     <number>10</number>

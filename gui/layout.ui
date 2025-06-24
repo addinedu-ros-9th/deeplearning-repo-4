@@ -58,7 +58,7 @@
      <rect>
       <x>200</x>
       <y>0</y>
-      <width>471</width>
+      <width>591</width>
       <height>51</height>
      </rect>
     </property>
@@ -107,6 +107,19 @@
        </property>
       </widget>
      </item>
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
     </layout>
    </widget>
    <widget class="QPushButton" name="menuBtn2">
@@ -133,19 +146,6 @@
     </property>
     <property name="text">
      <string>Detect Logs</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="notiBtn">
-    <property name="geometry">
-     <rect>
-      <x>1290</x>
-      <y>10</y>
-      <width>30</width>
-      <height>30</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string/>
     </property>
    </widget>
    <widget class="QPushButton" name="userBtn">

@@ -10,6 +10,7 @@ import cv2
 import socket
 import numpy as np
 import struct
+import requests
 
 import sys
 import os
@@ -61,7 +62,7 @@ class CCTVWidget(QWidget):
         # detect table 설정
         # 열 헤더 설정
         column = ["기록 시점", "불법행위 종류", "녹화 클립"]
-        original_data = [
+        self.original_data = [
             ["2023-06-21 14:30", "파손", "./video01.mp4"],
             ["2023-06-21 14:30", "유기", "./video01.mp4"],
             ["2023-06-21 14:30", "파손", "./video01.mp4"],
@@ -78,64 +79,9 @@ class CCTVWidget(QWidget):
             ["2023-06-21 14:30", "전등 끔", "./video01.mp4"],
             ["2023-06-21 14:30", "절도", "./video01.mp4"],
         ]
-        self.data = original_data.copy()
+        self.data = self.original_data.copy()
 
-        def dataChange():
-            if self.comboBox.currentText() == "전체":
-                self.data = original_data.copy()
-            elif self.comboBox.currentText() == "파손":
-                self.data = [row for row in original_data if row[1] == "파손"]
-            elif self.comboBox.currentText() == "유기":
-                self.data = [row for row in original_data if row[1] == "유기"]
-            elif self.comboBox.currentText() == "절도":
-                self.data = [row for row in original_data if row[1] == "절도"]
-            elif self.comboBox.currentText() == "전등 끔":
-                self.data = [row for row in original_data if row[1] == "전등 끔"]
-
-            self.detect_table.setRowCount(len(self.data))  # 필터링된 데이터 행 개수만큼 설정
-            
-            for row, row_data in enumerate(self.data):
-                for col, value in enumerate(row_data):
-                    if col == 1:  # 불법행위 comboBox 종류 열
-                        behavior_label = QLabel(value)
-                        if value == "파손":
-                            behavior_label.setProperty("class", "label behavior broken")
-                        elif value == "유기":
-                            behavior_label.setProperty("class", "label behavior abandon")
-                        elif value == "절도":
-                            behavior_label.setProperty("class", "label behavior theft")
-                        elif value == "전등 끔":
-                            behavior_label.setProperty("class", "label behavior light_off")
-
-                        behavior_label.setAlignment(Qt.AlignmentFlag.AlignCenter)  # 가운데 정렬
-
-                        layout = QHBoxLayout()
-                        layout.addWidget(behavior_label)
-                        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)  # 가운데 정렬
-                        layout.setContentsMargins(0, 0, 0, 0)  # 여백 제거
-
-                        # 셀에 레이아웃 설정
-                        cell_widget = QWidget()
-                        cell_widget.setLayout(layout)
-                        self.detect_table.setCellWidget(row, col, cell_widget)
-                    elif col == 2:  # 녹화 클립 열
-                        delete_button = QPushButton("")
-                        delete_button.setProperty("class", "btn clip small")
-                        # 삭제 버튼을 가운데 정렬하기 위한 레이아웃 설정
-                        layout = QHBoxLayout()
-                        layout.addWidget(delete_button)
-                        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)  # 가운데 정렬
-                        layout.setContentsMargins(0, 0, 0, 0)  # 여백 제거
-
-                        # 셀에 레이아웃 설정
-                        cell_widget = QWidget()
-                        cell_widget.setLayout(layout)
-                        self.detect_table.setCellWidget(row, col, cell_widget)
-                    else:  # 기록 시점 열
-                        item = QTableWidgetItem(value)
-                        self.detect_table.setItem(row, col, item)
-
-        self.comboBox.currentIndexChanged.connect(dataChange)
+        self.comboBox.currentIndexChanged.connect(self.dataChange)
 
         # 테이블 크기 조정
         self.detect_table.setRowCount(len(self.data))  # 데이터 행 개수만큼 설정
@@ -200,8 +146,85 @@ class CCTVWidget(QWidget):
         self.detect_table.setShowGrid(False) 
 
     def refresh(self):
-        print("cctv refesh called")
+        print("cctv refesh")
         self.title.setText(get_user_info()['store_name'])
+        self.original_data = self.get_notification_data()
+        self.dataChange()
+
+    def dataChange(self):
+        if self.comboBox.currentText() == "전체":
+            self.data = self.original_data.copy()
+        elif self.comboBox.currentText() == "파손":
+            self.data = [row for row in self.original_data if row[1] == "파손"]
+        elif self.comboBox.currentText() == "유기":
+            self.data = [row for row in self.original_data if row[1] == "유기"]
+        elif self.comboBox.currentText() == "절도":
+            self.data = [row for row in self.original_data if row[1] == "절도"]
+        elif self.comboBox.currentText() == "전등 끔":
+            self.data = [row for row in self.original_data if row[1] == "전등 끔"]
+
+        self.detect_table.setRowCount(len(self.data))  # 필터링된 데이터 행 개수만큼 설정
+        
+        for row, row_data in enumerate(self.data):
+            for col, value in enumerate(row_data):
+                if col == 1:  # 불법행위 comboBox 종류 열
+                    behavior_label = QLabel(value)
+                    if value == "파손":
+                        behavior_label.setProperty("class", "label behavior broken")
+                    elif value == "유기":
+                        behavior_label.setProperty("class", "label behavior abandon")
+                    elif value == "절도":
+                        behavior_label.setProperty("class", "label behavior theft")
+                    elif value == "전등 끔":
+                        behavior_label.setProperty("class", "label behavior light_off")
+
+                    behavior_label.setAlignment(Qt.AlignmentFlag.AlignCenter)  # 가운데 정렬
+
+                    layout = QHBoxLayout()
+                    layout.addWidget(behavior_label)
+                    layout.setAlignment(Qt.AlignmentFlag.AlignCenter)  # 가운데 정렬
+                    layout.setContentsMargins(0, 0, 0, 0)  # 여백 제거
+
+                    # 셀에 레이아웃 설정
+                    cell_widget = QWidget()
+                    cell_widget.setLayout(layout)
+                    self.detect_table.setCellWidget(row, col, cell_widget)
+                elif col == 2:  # 녹화 클립 열
+                    delete_button = QPushButton("")
+                    delete_button.setProperty("class", "btn clip small")
+                    # 삭제 버튼을 가운데 정렬하기 위한 레이아웃 설정
+                    layout = QHBoxLayout()
+                    layout.addWidget(delete_button)
+                    layout.setAlignment(Qt.AlignmentFlag.AlignCenter)  # 가운데 정렬
+                    layout.setContentsMargins(0, 0, 0, 0)  # 여백 제거
+
+                    # 셀에 레이아웃 설정
+                    cell_widget = QWidget()
+                    cell_widget.setLayout(layout)
+                    self.detect_table.setCellWidget(row, col, cell_widget)
+                else:  # 기록 시점 열
+                    item = QTableWidgetItem(value)
+                    self.detect_table.setItem(row, col, item)        
+
+    def get_notification_data(self):
+        url = f"http://{CENTRAL_IP}:{CENTRAL_PORT}/load/notification"
+        req_data = {
+            "user_id": user_id,
+        }
+
+        try:
+            response = requests.post(url, json=req_data)
+            if response.status_code == 200:
+                result = response.json()
+                print("[cctv 알림 - 응답 내용]:", result)
+                return result.get('data', {})
+            else:
+                print(f"요청 실패: {response.status_code}")
+                return {}
+        except requests.RequestException as e:
+            print(f"요청 중 오류 발생: {e}")
+            return {}
+
 
     def showEvent(self, event):
         # 화면에 보일 때만 타이머 시작

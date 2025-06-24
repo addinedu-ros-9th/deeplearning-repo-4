@@ -13,22 +13,6 @@ from cctv import CCTVWidget
 from dashboard import DashboardWidget
 from detect_log import DetectLogWidget
 
-class NotiPopover(QWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        loadUi("userPopover.ui", self)
-        self.setObjectName("userPopover") 
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Popup)
-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-
-        self.logoutBtn.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-        self.logoutBtn.clicked.connect(self.close)
-
-    def show_at(self, pos):
-        """특정 위치에 팝오버 표시"""
-        self.move(pos)
-        self.show()
-
 class UserPopover(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -43,8 +27,7 @@ class UserPopover(QWidget):
         self.userEmail.setProperty("class", "weight300 size12 color-gray6")
 
     def refresh(self):
-        print("user popover refresh called")
-        print("userName object:", self.userName)
+        print("user popover refresh")
         self.userName.setText(get_user_info()['name'])
         self.userEmail.setText(get_user_info()['email'])
 
@@ -86,7 +69,6 @@ class LayoutWindow(QMainWindow):
         self.locDivider.setProperty("class", "weight700 size16 color-gray9")
         self.locArrow.setProperty("class", "weight700 size16 color-gray9 hidden")
         
-        self.notiBtn.clicked.connect(self.show_noti_popover)
         self.userBtn.clicked.connect(self.show_user_popover)
         
         # UserPopover 생성 및 시그널 연결
@@ -103,10 +85,10 @@ class LayoutWindow(QMainWindow):
         self.detect_log_widget.hide()
 
     def refresh(self):
-        print("layout refesh called")
+        print("layout refesh")
         self.locDepth1.setText(get_user_info()['store_name'])
-        self.user_popover.refresh()
         self.userBtn.setText(get_user_id())
+        self.user_popover.refresh()
         self.cctv_widget.refresh()
         
 
@@ -158,13 +140,6 @@ class LayoutWindow(QMainWindow):
     def handle_logout2(self):
         """로그아웃 처리"""
         self.logout_successful.emit()
-
-    def show_noti_popover(self):
-        # 버튼 위치를 기준으로 팝오버 표시
-        button_pos = self.notiBtn.mapToGlobal(self.notiBtn.rect().bottomRight())  # 버튼의 우측 하단 좌표
-        popover_x = button_pos.x() - self.user_popover.width()  # 팝오버의 우측 끝이 버튼의 우측 끝과 정렬되도록 조정
-        popover_y = button_pos.y() # 버튼의 아래쪽에 팝오버 표시
-        self.user_popover.show_at(QPoint(popover_x, popover_y))
 
     def show_user_popover(self):
         # 버튼 위치를 기준으로 팝오버 표시

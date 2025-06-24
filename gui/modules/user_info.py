@@ -30,11 +30,9 @@ def set_user_info(info):
         user_info = {'name': '', 'email': '', 'store_name': ''}
 
 def get_user_id():
-    print(f"유저 아이디 : {user_id}")
     return user_id
 
 def get_user_info():
-    print(f"유저 정보 : {user_info}")
     return user_info
 
 def reset_user():
