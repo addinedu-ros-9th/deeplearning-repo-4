@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from central_server.services.dashboard_service import get_status_data
 
 bp = Blueprint('dashboard', __name__, url_prefix='/load')
 
@@ -9,7 +10,6 @@ def get_dashboard_data():
     user_id = data.get('user_id')
     date = data.get('date')
     
-    # TODO: Service를 통해 통계 데이터 생성
     print(f"대시보드 요청: {user_id}, {date}")
     mock_data = {
       "user_id": user_id,
