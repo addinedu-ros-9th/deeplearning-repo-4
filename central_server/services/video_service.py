@@ -1,17 +1,12 @@
+from central_server.config import VIDEO_BASE_DIR
 from central_server.database.db import get_connection
 import os
 
 def get_video_path(video_url):
-    """비디오 URL에 해당하는 실제 파일 경로를 DB에서 조회하여 반환합니다."""
-    conn = get_connection()
-    cursor = conn.cursor(dictionary=True)
-    select_query = "SELECT file_path FROM cctv_data WHERE video_url = %s LIMIT 1"
-    cursor.execute(select_query, (video_url,))
-    row = cursor.fetchone()
-    cursor.close()
-    conn.close()
-    if row:
-        return row['file_path']
+    """video_url에 해당하는 실제 파일 경로를 반환합니다."""
+    video_path = os.path.join(VIDEO_BASE_DIR, video_url)
+    if os.path.exists(video_path):
+        return video_path
     else:
         return None
 

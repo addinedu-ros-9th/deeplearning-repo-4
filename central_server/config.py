@@ -5,3 +5,8 @@ DB_CONFIG = {
     "database": "GigachadDb",
     "port": 3306
 }
+
+import os
+VIDEO_BASE_DIR = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '../server/received_clips/')
+)
