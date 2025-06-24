@@ -16,18 +16,10 @@ def get_status_data(user_id, date):
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
     try:
-        # 최근 12개월(요청 월 포함) 데이터 조회
-        year = int(date[:4])
-        month = int(date[4:])
-        months = []
-        for i in range(12):
-            m = month - i
-            y = year
-            if m <= 0:
-                m += 12
-                y -= 1
-            months.append((y, m))
-        months = months[::-1]  # 과거→현재 순
+        # date: "2025-06"
+        year, month = map(int, date.split('-'))
+        # 1월부터 요청 월까지
+        months = [f"{year}-{str(m).zfill(2)}" for m in range(1, month+1)]
 
         # user_id로 store_name 찾기
         cursor.execute("SELECT store_name FROM store WHERE user_id = %s", (user_id,))
@@ -36,12 +28,9 @@ def get_status_data(user_id, date):
             return result
         store_name = store_row['store_name']
 
-        for y, m in months:
-            ym = f"{y}-{str(m).zfill(2)}"
-            # event_type별 count
+        for ym in months:
             count_dict = {etype: 0 for etype in event_types}
             slot_dict = {slot: [0]*len(event_types) for slot in time_slots}
-            # 해당 월 데이터 조회
             query = f"""
                 SELECT event_type, time
                 FROM cctv_data

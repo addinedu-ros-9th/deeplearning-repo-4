@@ -9,11 +9,11 @@ def change_event_type():
     data = request.get_json()
     user_id = data.get('user_id')
     store_name = data.get('store_name')
-    date = data.get('date')
+    timestamp = data.get('timestamp')
     event_type = data.get('event_type')
-    if not all([user_id, store_name, date, event_type]):
+    if not all([user_id, store_name, timestamp, event_type]):
         return jsonify({"message": "필수 파라미터 누락"}), 404
-    success = update_event_type(user_id, store_name, date, event_type)
+    success = update_event_type(user_id, store_name, timestamp, event_type)
     if success:
         return jsonify({"message": "Event type updated"}), 200
     else:
@@ -25,11 +25,11 @@ def change_is_checked():
     data = request.get_json()
     user_id = data.get('user_id')
     store_name = data.get('store_name')
-    date = data.get('date')
+    timestamp = data.get('timestamp')
     is_checked = data.get('is_checked')
-    if not all([user_id, store_name, date]) or is_checked is None:
+    if not all([user_id, store_name, timestamp]) or is_checked is None:
         return jsonify({"message": "필수 파라미터 누락"}), 404
-    success = update_is_checked(user_id, store_name, date, is_checked)
+    success = update_is_checked(user_id, store_name, timestamp, is_checked)
     if success:
         return jsonify({"message": "is_checked updated"}), 200
     else:

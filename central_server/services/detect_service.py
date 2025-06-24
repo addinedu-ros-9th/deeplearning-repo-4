@@ -49,7 +49,7 @@ def get_filtered_logs(filters):
     base_query = """
         SELECT s.store_name, d.time, d.event_type, d.person_count, d.is_checked, d.video_url
         FROM cctv_data d
-        JOIN store s ON d.store_id = s.store_id
+        JOIN store s ON d.store_name = s.store_name
         WHERE 1=1
     """
     where_clauses = []
@@ -60,18 +60,28 @@ def get_filtered_logs(filters):
         where_clauses.append("s.user_id = %s")
         params.append(filters['user_id'])
 
-    # 기간 필터
+    # 날짜/기간 필터
     period = filters.get('period')
     start_date = filters.get('start_date')
     end_date = filters.get('end_date')
 
-    if start_date and end_date:
-        # YYYYMMDD → YYYY-MM-DD 변환
-        start = datetime.strptime(start_date, "%Y%m%d")
-        end = datetime.strptime(end_date, "%Y%m%d") + timedelta(days=1)
+    # "None" 문자열, None, null 모두 None으로 처리
+    def is_none(val):
+        return val is None or val == "None"
+
+    # 둘 다 값이 있으면 에러
+    if (not is_none(period)) and (not (is_none(start_date) and is_none(end_date))):
+        cursor.close()
+        conn.close()
+        raise ValueError("period와 start_date/end_date를 동시에 지정할 수 없습니다.")
+
+    # 날짜 범위 우선
+    if not is_none(start_date) and not is_none(end_date):
+        start = datetime.strptime(start_date, "%Y-%m-%d")
+        end = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(days=1)
         where_clauses.append("d.time >= %s AND d.time < %s")
         params.extend([start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")])
-    elif period:
+    elif not is_none(period):
         today = datetime.now().date()
         if period == "today":
             start = today
@@ -91,6 +101,7 @@ def get_filtered_logs(filters):
         if start and end:
             where_clauses.append("d.time >= %s AND d.time < %s")
             params.extend([start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")])
+    # 둘 다 None이면 전체 데이터(혹은 에러) - 필요시 처리
 
     # event_type (여러 개)
     if filters.get('event_type'):
