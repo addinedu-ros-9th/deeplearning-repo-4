@@ -37,6 +37,8 @@ class LoginWindow(QMainWindow):
         self.login_desc2.setProperty("class", "size16 weight300 color-gray9")
         self.login_id.setProperty("class", "size14 color-gray3")
         self.login_password.setProperty("class", "size14 color-gray3")
+        self.auth_text1.setProperty("class", "size12 color-white")
+        self.auth_text2.setProperty("class", "size12 color-white")
 
         # pw영역 * 표시
         self.login_textfield2.setEchoMode(QLineEdit.EchoMode.Password)
@@ -54,13 +56,23 @@ class LoginWindow(QMainWindow):
 
     def textfield1_changed(self):
         self.login_textfield1.setProperty("class", "textfield large")
+        self.auth_text1.setProperty("class", "size12 color-white")
         self.login_textfield1.style().unpolish(self.login_textfield1)   
         self.login_textfield1.style().polish(self.login_textfield1)
+        self.auth_text1.update()
+        self.auth_text1.style().unpolish(self.auth_text1)   
+        self.auth_text1.style().polish(self.auth_text1)
+        self.auth_text1.update()
     
     def textfield2_changed(self):
         self.login_textfield2.setProperty("class", "textfield large")
+        self.auth_text2.setProperty("class", "size12 color-white")
         self.login_textfield2.style().unpolish(self.login_textfield2)   
         self.login_textfield2.style().polish(self.login_textfield2)
+        self.auth_text2.update()
+        self.auth_text2.style().unpolish(self.auth_text2)   
+        self.auth_text2.style().polish(self.auth_text2)
+        self.auth_text2.update()
 
     def check_login(self):
         # login_textfield1에 입력된 값 확인
@@ -114,23 +126,36 @@ class LoginWindow(QMainWindow):
             response = requests.post(url, json=data)
             print("[응답 코드]:", response.status_code)
 
-            if response.status_code == 200:
+            if not self.login_checkbox.isChecked():
+                self.login_textfield1.clear() # 수정해야됨
+                self.login_textfield2.clear()
+
+            if response.status_code == 200:               
                 result = response.json()
                 print("[응답 내용]:", result)
 
-                # user_info = result.get("user")
-                # if not user_info or "user_id" not in user_info:
-                #     QMessageBox.warning(self, "오류", "로그인 응답에 사용자 정보가 없습니다.")
-                #     return
+                user_info_url = f"http://{CENTRAL_IP}:{CENTRAL_PORT}/load/private_information"
+                user_info_data = {
+                    "user_id": user_id
+                }
+                # 사용자 정보 요청
+                user_info_response = requests.post(user_info_url, json=user_info_data)
+                print("[요청유저정보]", user_info_data)
+                print("[사용자 정보 요청 URL]:", user_info_url)
+                if user_info_response.status_code == 200: # 사용자 정보 조회 성공
+                    user_info_result = user_info_response.json()
+                    print("[사용자 정보 응답 내용]:", user_info_result.get('data', {}))
+                    set_user_id(user_id)  # 사용자 ID 저장
+                    set_user_info(user_info_result.get('data', {}))  # 사용자 정보 저장
 
-                # logged_in_user_id = user_info["user_id"]
+                else: # 사용자 정보 조회 실패
+                    print("[사용자 정보 조회 실패]:", user_info_response.status_code)
+                    return
 
-                # self.label_error.setText("")
+                # 로그인 완료
                 QMessageBox.information(self, "로그인 성공", f"{user_id}님 환영합니다!")
                 self.login_successful.emit()
-                # self.main_window = MainMonitorWindow(user_id=logged_in_user_id)
-                # self.main_window.show()
-                # self.close()
+
             elif response.status_code == 401:
                 # 텍스트 필드 포커스 제거
                 self.login_textfield1.clearFocus()
@@ -143,7 +168,12 @@ class LoginWindow(QMainWindow):
                 self.login_textfield1.setProperty("class", "textfield large error")
                 self.login_textfield1.style().unpolish(self.login_textfield1)
                 self.login_textfield1.style().polish(self.login_textfield1)
-                self.login_textfield1.update() 
+                self.login_textfield1.update()
+                self.auth_text1.setProperty("class", "size12 color-error")
+                self.auth_text1.style().unpolish(self.auth_text1)   
+                self.auth_text1.style().polish(self.auth_text1)
+                self.auth_text1.update()
+
             elif response.status_code == 402:
                 # 텍스트 필드 포커스 제거
                 self.login_textfield1.clearFocus()
@@ -157,6 +187,32 @@ class LoginWindow(QMainWindow):
                 self.login_textfield2.style().unpolish(self.login_textfield2)
                 self.login_textfield2.style().polish(self.login_textfield2)
                 self.login_textfield2.update()
+                self.auth_text2.setProperty("class", "size12 color-error")
+                self.auth_text2.style().unpolish(self.auth_text2)   
+                self.auth_text2.style().polish(self.auth_text2)
+                self.auth_text2.update()
+
+            elif response.status_code == 404:
+                if self.login_textfield1.text() == "":
+                    # 실패 메세지 표시
+                    self.login_textfield1.setProperty("class", "textfield large error")
+                    self.login_textfield1.style().unpolish(self.login_textfield1)
+                    self.login_textfield1.style().polish(self.login_textfield1)
+                    self.login_textfield1.update()
+                    self.auth_text1.setProperty("class", "size12 color-error")
+                    self.auth_text1.style().unpolish(self.auth_text1)   
+                    self.auth_text1.style().polish(self.auth_text1)
+                    self.auth_text1.update()
+                if self.login_textfield2.text() == "":
+                    # 실패 메세지 표시
+                    self.login_textfield2.setProperty("class", "textfield large error")
+                    self.login_textfield2.style().unpolish(self.login_textfield2)
+                    self.login_textfield2.style().polish(self.login_textfield2)
+                    self.login_textfield2.update()
+                    self.auth_text2.setProperty("class", "size12 color-error")
+                    self.auth_text2.style().unpolish(self.auth_text2)   
+                    self.auth_text2.style().polish(self.auth_text2)
+                    self.auth_text2.update()
 
         except Exception as e:
             print("[네트워크 예제]:", str(e))

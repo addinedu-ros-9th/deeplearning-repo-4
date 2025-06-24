@@ -9,7 +9,6 @@ from PyQt6.QtWidgets import *
 
 from modules.user_info import *
 
-
 from cctv import CCTVWidget
 from dashboard import DashboardWidget
 from detect_log import DetectLogWidget
@@ -38,14 +37,16 @@ class UserPopover(QWidget):
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Popup)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         
-        if user_info is not None and len(user_info) >= 2:
-            self.userId.setText(str(user_info[0]))
-            self.userEmail.setText(str(user_info[1]))
-
         self.logoutBtn.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.logoutBtn.clicked.connect(self.close)
-        self.userId.setProperty("class", "weight700 size14 color-gray6")
+        self.userName.setProperty("class", "weight700 size14 color-gray6")
         self.userEmail.setProperty("class", "weight300 size12 color-gray6")
+
+    def refresh(self):
+        print("user popover refresh called")
+        print("userName object:", self.userName)
+        self.userName.setText(get_user_info()['name'])
+        self.userEmail.setText(get_user_info()['email'])
 
     def show_at(self, pos):
         """특정 위치에 팝오버 표시"""
@@ -61,9 +62,10 @@ class LayoutWindow(QMainWindow):
         self.setWindowTitle("Gigachad | CCTV")
         # .ui 파일 로드
         loadUi("layout.ui", self)
+        self.store_name = get_user_info()['store_name']
         # 네임 설정
         self.locTitle.setText("CCTV")
-        self.locDepth1.setText("전체 매장")
+        self.locDepth1.setText(self.store_name)
         self.userBtn.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         # self.userBtn.setText(super().user_id)
 
@@ -100,10 +102,19 @@ class LayoutWindow(QMainWindow):
         self.dashboard_widget.hide()
         self.detect_log_widget.hide()
 
+    def refresh(self):
+        print("layout refesh called")
+        self.locDepth1.setText(get_user_info()['store_name'])
+        self.user_popover.refresh()
+        self.userBtn.setText(get_user_id())
+        self.cctv_widget.refresh()
+        
+
     def clickMenu1(self):
         self.menuBtn1.setProperty("class", "menuBtn1 active")
         self.menuBtn2.setProperty("class", "menuBtn2")
         self.menuBtn3.setProperty("class", "menuBtn3")
+        self.locTitle.setText("CCTV")
         self.menuBtn1.style().unpolish(self.menuBtn1)   
         self.menuBtn1.style().polish(self.menuBtn1)
         self.menuBtn2.style().unpolish(self.menuBtn2)   
@@ -118,6 +129,7 @@ class LayoutWindow(QMainWindow):
         self.menuBtn1.setProperty("class", "menuBtn1")
         self.menuBtn2.setProperty("class", "menuBtn2 active")
         self.menuBtn3.setProperty("class", "menuBtn3")
+        self.locTitle.setText("Dashboard")
         self.menuBtn1.style().unpolish(self.menuBtn1)   
         self.menuBtn1.style().polish(self.menuBtn1)
         self.menuBtn2.style().unpolish(self.menuBtn2)   
@@ -132,6 +144,7 @@ class LayoutWindow(QMainWindow):
         self.menuBtn1.setProperty("class", "menuBtn1")
         self.menuBtn2.setProperty("class", "menuBtn2")
         self.menuBtn3.setProperty("class", "menuBtn3 active")
+        self.locTitle.setText("Detection Log")
         self.menuBtn1.style().unpolish(self.menuBtn1)   
         self.menuBtn1.style().polish(self.menuBtn1)
         self.menuBtn2.style().unpolish(self.menuBtn2)   

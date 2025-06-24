@@ -10,66 +10,35 @@ conn = pymysql.connect(
     charset='utf8'
 )
 
-user = ''
-user_info = []
+user_id = ''
+user_info = {'name': '', 'email': '', 'store_name': ''}
 
-def check_user_id(user_id):
-    """
-    주어진 user_id가 user에 존재하는지 확인합니다.
-    :param user_id: 확인할 사용자 ID
-    :return: 존재하면 True, 아니면 False
-    """
-    with conn.cursor() as cursor:
-        sql = "SELECT COUNT(*) FROM user WHERE user_id = %s"
-        cursor.execute(sql, (user_id,))
-        result = cursor.fetchone()
-        return result[0] > 0
-    
-def check_user_pw(user_id, password):
-    """
-    주어진 user_id와 password가 일치하는지 확인합니다.
-    :param user_id: 사용자 ID
-    :param password: 비밀번호
-    :return: 일치하면 True, 아니면 False
-    """
-    with conn.cursor() as cursor:
-        sql = "SELECT COUNT(*) FROM user WHERE user_id = %s AND password = %s"
-        cursor.execute(sql, (user_id, password))
-        result = cursor.fetchone()
-        return result[0] > 0
-    
-def set_user(user_id):
-    with conn.cursor() as cursor:
-        sql = "SELECT user_id FROM user WHERE user_id = %s"
-        cursor.execute(sql, (user_id,))
-        result = cursor.fetchone()
-        print(result)
-        global user
-        user = str(result)
+def set_user_id(id):
+    global user_id
+    if id != '':
+        user_id = id
+    else:
+        print("No user id")
+        user_id = ''
 
-def set_user_info(user_id):
-    # ['user01', 'user01', '최기가', 'user01@email.com', datetime.datetime(2025, 6, 16, 17, 0)]
+def set_user_info(info):
+    global user_info
+    if info['name'] != '':
+        user_info = info
+    else:
+        print("No user found with the given user_id.")
+        user_info = {'name': '', 'email': '', 'store_name': ''}
 
-    with conn.cursor() as cursor:
-        sql = "SELECT * FROM user WHERE user_id = %s"
-        cursor.execute(sql, (user_id,))
-        result = cursor.fetchone()
-        global user_info
-        if result is not None:
-            print(list(result))
-            user_info = list(result)
-        else:
-            print("No user found with the given user_id.")
-            user_info = []
-        
-def get_user():
-    print(f"사용자 : {user}")
-    return user
+def get_user_id():
+    print(f"유저 아이디 : {user_id}")
+    return user_id
 
 def get_user_info():
     print(f"유저 정보 : {user_info}")
     return user_info
 
 def reset_user():
-    user = ''
-    user_info = []
+    global user_id
+    global user_info
+    user_id = ''
+    user_info = {'name': '', 'email': '', 'store_name': ''}
