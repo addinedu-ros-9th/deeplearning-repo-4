@@ -16,11 +16,11 @@ def create_app():
 
     # 블루프린트 등록
     app.register_blueprint(auth.bp)
-    # app.register_blueprint(user.bp)
-    # app.register_blueprint(detect_log.bp)
-    # app.register_blueprint(video.bp)
-    # app.register_blueprint(event_change.bp)
-    # app.register_blueprint(dashboard.bp)
+    app.register_blueprint(user.bp)
+    app.register_blueprint(detect_log.bp)
+    app.register_blueprint(video.bp)
+    app.register_blueprint(event_change.bp)
+    app.register_blueprint(dashboard.bp)
 
     return app
 
