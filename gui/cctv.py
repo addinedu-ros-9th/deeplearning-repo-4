@@ -241,7 +241,7 @@ class CCTVWidget(QWidget):
 
                         print("클립 req_data:", req_data)
                         try:
-                            response = requests.get(url, json=req_data)
+                            response = requests.get(url, params=req_data)
                             if response.status_code == 200:
                                 print('비디오 응답 성공')
                                 # 응답 파일 타입 확인
