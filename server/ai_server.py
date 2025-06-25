@@ -710,8 +710,9 @@ def realtime_anomaly_detection(model_path, pose_model_path='yolov8n-pose.pt', se
                             action_name = LABEL_NAMES[detected_action]
                             last_saved_action = detected_action
                             # 이상 행위 시스템 알림
-                            confidence = probs[detected_action] if 'probs' in locals() else 1.0
-                            confidence_str = f"{confidence:.2f}"
+                            # max_confidence 사용 (가장 높은 확률)
+                            max_confidence = np.max(probs) if 'probs' in locals() else 1.0
+                            confidence_str = f"{max_confidence:.2f}"
                             send_notification(action_name, person_count, confidence_str)
                         
                         dt_str = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -753,9 +754,9 @@ def realtime_anomaly_detection(model_path, pose_model_path='yolov8n-pose.pt', se
                                 if abnormal_preds:
                                     major_action = Counter(abnormal_preds).most_common(1)[0][0]
                                     action_name = LABEL_NAMES[major_action]
-                                    # major_action의 confidence 구하기
-                                    confidence = probs[major_action] if 'probs' in locals() else 1.0
-                                    confidence_str = f"{confidence:.2f}"
+                                    # max_confidence 사용 (가장 높은 확률)
+                                    max_confidence = np.max(probs) if 'probs' in locals() else 1.0
+                                    confidence_str = f"{max_confidence:.2f}"
                                     # 파일명에 confidence 포함
                                     send_clip_frames_to_central_server(clip_frames, action_name, current_clip_max_persons, dt_str, confidence_str)
                                 else:
