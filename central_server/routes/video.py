@@ -10,8 +10,7 @@ bp = Blueprint('video', __name__)
 @bp.route('/load/video', methods=['GET'])
 def load_video():
     """IF-04: 영상 실행"""
-    data = request.get_json()
-    video_url = data.get('video_url')
+    video_url = request.args.get('video_url')
 
     video_path = get_video_path(video_url)
 
