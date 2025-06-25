@@ -17,7 +17,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from modules.user_info import *
 
-from server.config import CENTRAL_IP, CENTRAL_PORT
+from server.config import CENTRAL_IP, CENTRAL_GUI_PORT
 
 from style import apply_style
 
@@ -141,7 +141,7 @@ class CCTVWidget(QWidget):
         self.dataChange()     
 
     def get_notification_data(self):
-        url = f"http://{CENTRAL_IP}:{CENTRAL_PORT}/load/notification"
+        url = f"http://{CENTRAL_IP}:{CENTRAL_GUI_PORT}/load/notification"
         req_data = {
             "user_id": get_user_id(),
         }

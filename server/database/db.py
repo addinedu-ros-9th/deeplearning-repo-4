@@ -1,5 +1,5 @@
+from .config import DB_CONFIG
 import pymysql
-from central_server.config import DB_CONFIG
 
 def insert_clip(store_name, cctv_no, time_str, event_type, confidence, person_count, is_checked, video_url):
     conn = pymysql.connect(**DB_CONFIG)

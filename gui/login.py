@@ -12,7 +12,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from server.config import CENTRAL_IP, CENTRAL_PORT
+from server.config import CENTRAL_IP, CENTRAL_GUI_PORT
 from modules.user_info import *
 
 class LoginWindow(QMainWindow):
@@ -113,7 +113,7 @@ class LoginWindow(QMainWindow):
         user_pw = self.login_textfield2.text()
 
         # 서버 요청
-        url = f"http://{CENTRAL_IP}:{CENTRAL_PORT}/auth/login"
+        url = f"http://{CENTRAL_IP}:{CENTRAL_GUI_PORT}/auth/login"
         data = {
             "user_id": user_id,
             "passwd": user_pw
@@ -134,7 +134,7 @@ class LoginWindow(QMainWindow):
                 result = response.json()
                 print("[응답 내용]:", result)
 
-                user_info_url = f"http://{CENTRAL_IP}:{CENTRAL_PORT}/load/private_information"
+                user_info_url = f"http://{CENTRAL_IP}:{CENTRAL_GUI_PORT}/load/private_information"
                 user_info_data = {
                     "user_id": user_id
                 }
