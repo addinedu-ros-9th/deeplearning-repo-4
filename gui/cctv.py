@@ -36,14 +36,29 @@ class ClipPopupWidget(QWidget):
 
         self.bg.setProperty("class", "video_bg")
         self.video_wrap.setProperty("class", "video_wrap")
-        # self.video.setProperty("class", "video")
-        # video는 QMediaPlayer로!
+
         self.video_widget = QVideoWidget(self)
-        self.video_widget.setFixedSize(1280, 720)
+        self.video_widget.setStyleSheet("background-color: black;")
         self.video_layout = QVBoxLayout(self.video_wrap)  # self.bg가 레이아웃 대상이라면
         self.video_layout.addWidget(self.video_widget)
         self.video = QMediaPlayer(self)
         self.video.setVideoOutput(self.video_widget)
+        
+        # 버튼 시그널 연결
+        self.playBtn.clicked.connect(self.video.play)
+        self.pauseBtn.clicked.connect(self.video.pause)
+        self.backwardBtn.clicked.connect(self.seek_backward)
+        self.forwardBtn.clicked.connect(self.seek_forward)
+
+    def seek_backward(self):
+        # 5초 뒤로
+        pos = max(0, self.video.position() - 5000)
+        self.video.setPosition(pos)
+
+    def seek_forward(self):
+        # 5초 앞으로
+        pos = min(self.video.duration(), self.video.position() + 5000)
+        self.video.setPosition(pos)
 
     def show_at(self, pos):
         """특정 위치에 팝오버 표시"""
