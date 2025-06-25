@@ -7,7 +7,7 @@ from central_server.services.video_service import get_video_path, delete_video_f
 
 bp = Blueprint('video', __name__)
 
-@bp.route('/load/video', methods=['POST'])
+@bp.route('/load/video', methods=['GET'])
 def load_video():
     """IF-04: 영상 실행"""
     data = request.get_json()
