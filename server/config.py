@@ -17,5 +17,8 @@ RECIEVER_IP = "0.0.0.0" # 모든 IP에서 수신
 RECIEVER_PORT = 5005
 
 # TCP 송신
-CENTRAL_IP = wonho_pc # 중앙 서버 IP
+CENTRAL_IP = chaeyeon_pc # 중앙 서버 IP
 CENTRAL_PORT = 6006
+
+# 중앙 서버 GUI 포트
+CENTRAL_GUI_PORT = 6007

@@ -6,7 +6,10 @@ import numpy as np
 import struct
 import os
 import json
-from server.database.db import insert_clip
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from database.db import insert_clip
+from datetime import datetime
 
 # AI 서버로부터 수신
 AI_PORT = 6006
@@ -69,12 +72,18 @@ def handle_ai(ai_conn):
                     cctv_no = 1               # 실제 cctv 번호로 교체
                     is_checked = 0            # 기본값
 
+                    raw_time = metadata['timestamp']
+                    dt = datetime.strptime(raw_time, "%Y%m%d_%H%M%S")
+                    mysql_time = dt.strftime("%Y-%m-%d %H:%M:%S")
+
                     video_url = os.path.basename(clip_filename)
+                    event_type = metadata['action_name'].lower()
+
                     insert_clip(
                         store_name,
                         cctv_no,
-                        metadata['timestamp'],
-                        metadata['action_name'],
+                        mysql_time,
+                        event_type,
                         metadata['confidence'],
                         metadata['person_count'],
                         is_checked,
