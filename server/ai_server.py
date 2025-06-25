@@ -16,6 +16,7 @@ import datetime
 import socket
 import struct
 import json
+import subprocess
 
 from config import RECIEVER_IP, RECIEVER_PORT, CENTRAL_IP, CENTRAL_PORT, CENTRAL_GUI_IP, CENTRAL_GUI_PORT
 
@@ -480,6 +481,54 @@ def detect_light_off(frame, prev_brightness):
         status = "Light OFF (Change)"
     return curr_brightness, status
 
+def send_notification(event_type, person_count, confidence_str):
+    """
+    GUI로 UDP를 통해 알림 전송
+    
+    Args:
+        event_type (str): 이벤트 타입 ("Light_OFF", "Theft", "Broken", "Abandon")
+        person_count (int): 사람 수
+        confidence_str (str): 신뢰도
+    """
+    global gui_udp_sock
+    
+    # GUI로 UDP 알림 전송
+    if gui_udp_sock is None:
+        try:
+            gui_udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            print(f"[AI 서버] GUI 알림 UDP 소켓 생성: {GUI_UDP_IP}:{GUI_UDP_PORT}")
+        except Exception as e:
+            print(f"[AI 서버] GUI 알림 UDP 소켓 생성 실패: {e}")
+            return
+
+    try:
+        # 알림 데이터 생성
+        notification_data = {
+            'type': 'notification',
+            'event_type': event_type,
+            'person_count': person_count,
+            'confidence': confidence_str,
+            'timestamp': time.time()
+        }
+        
+        # JSON으로 인코딩
+        notification_json = json.dumps(notification_data).encode('utf-8')
+        
+        # 패킷 헤더 추가
+        timestamp = time.time()
+        frame_id = 0  # 알림용 특별 ID
+        packet_idx = 0
+        num_packets = 1
+        data_size = len(notification_json)
+        
+        header = struct.pack('!dIIII', timestamp, frame_id, packet_idx, num_packets, data_size)
+        packet = header + notification_json
+        
+        gui_udp_sock.sendto(packet, (GUI_UDP_IP, GUI_UDP_PORT))
+        print(f"[AI 서버] GUI로 알림 전송: {event_type} (사람 수: {person_count}, 신뢰도: {confidence_str})")
+        
+    except Exception as e:
+        print(f"[AI 서버] GUI 알림 전송 오류: {e}")
 
 def realtime_anomaly_detection(model_path, pose_model_path='yolov8n-pose.pt', sequence_length=SEQUENCE_LENGTH, udp_ip="0.0.0.0", udp_port=5005):
     """실시간 UDP 스트림 이상 감지 (cctv_udp_client.py와 호환)"""
@@ -653,11 +702,17 @@ def realtime_anomaly_detection(model_path, pose_model_path='yolov8n-pose.pt', se
                             detected_action = "light_off"
                             action_name = "Light_OFF"
                             last_saved_action = "light_off"
+                            # Light OFF 알림
+                            send_notification("Light_OFF", person_count, "1.00")
                         else:
                             # 기존 AI 예측 기반
                             detected_action = list(set(pred_buffer))[0]
                             action_name = LABEL_NAMES[detected_action]
                             last_saved_action = detected_action
+                            # 이상 행위 시스템 알림
+                            confidence = probs[detected_action] if 'probs' in locals() else 1.0
+                            confidence_str = f"{confidence:.2f}"
+                            send_notification(action_name, person_count, confidence_str)
                         
                         dt_str = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
                         

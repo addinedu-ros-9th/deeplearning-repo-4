@@ -16,6 +16,8 @@ import requests
 from functools import partial
 import sys
 import os
+import subprocess
+import json
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from modules.user_info import *
@@ -59,7 +61,6 @@ class CCTVWidget(QWidget):
 
         self.clip_popup_widget = ClipPopupWidget(self)
         
-        
         # 네트워크 연결 설정
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
@@ -84,6 +85,11 @@ class CCTVWidget(QWidget):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_frame)
         # self.timer.start(int(1000 / frame)) 
+
+        # 알림 데이터 새로고침 타이머 (10초마다)
+        self.notification_timer = QTimer(self)
+        self.notification_timer.timeout.connect(self.get_notification_data)
+        self.notification_timer.start(10000)  # 10초마다 실행
 
         # detect table 설정
         # 열 헤더 설정
@@ -178,6 +184,7 @@ class CCTVWidget(QWidget):
             if response.status_code == 200:
                 result = response.json()
                 print("[cctv 알림 - 응답 내용]:", result)
+                
                 self.original_data = result
                 self.data = self.original_data.copy()  # 초기 데이터 복사
                 # return result
@@ -296,11 +303,13 @@ class CCTVWidget(QWidget):
     def showEvent(self, event):
         # 화면에 보일 때만 타이머 시작
         self.timer.start(int(1000 / 10))  # 프레임 수에 맞게 조정
+        self.notification_timer.start(10000)  # 알림 타이머 시작
         super().showEvent(event)
 
     def hideEvent(self, event):
         # 화면에서 사라질 때 타이머 정지
         self.timer.stop()
+        self.notification_timer.stop()  # 알림 타이머 정지
         super().hideEvent(event)
 
     def recv_full(self, size):
@@ -330,6 +339,21 @@ class CCTVWidget(QWidget):
             num_packets = packet_info['num_packets']
             packet_data = packet_info['packet_data']
             timestamp = packet_info['timestamp']
+            
+            # 알림 패킷인지 확인 (frame_id가 0인 경우)
+            if frame_id == 0:
+                try:
+                    # JSON 데이터 디코딩
+                    notification_json = packet_data.decode('utf-8')
+                    notification_data = json.loads(notification_json)
+                    
+                    # 알림 타입인지 확인
+                    if notification_data.get('type') == 'notification':
+                        self.process_ai_notification(notification_data)
+                        return
+                except Exception as e:
+                    print(f"[CCTV] 알림 패킷 처리 오류: {e}")
+                    return
             
             # 프레임 버퍼에 패킷 추가
             if frame_id not in self.frame_buffers:
@@ -437,6 +461,56 @@ class CCTVWidget(QWidget):
         except Exception as e:
             print(f"UDP 수신 오류: {e}")
             return None
+
+    def process_ai_notification(self, notification_data):
+        """
+        AI 서버로부터 받은 알림 처리
+        
+        Args:
+            notification_data (dict): 알림 데이터
+        """
+        try:
+            event_type = notification_data.get('event_type', 'unknown')
+            person_count = notification_data.get('person_count', 0)
+            confidence = notification_data.get('confidence', '0.00')
+            timestamp = notification_data.get('timestamp', time.time())
+            
+            # 알림 메시지 생성
+            if event_type == "Light_OFF":
+                title = "🔦 Light OFF 감지"
+                message = f"전등이 꺼진 상태가 감지되었습니다.\n사람 수: {person_count}명\n신뢰도: {confidence}"
+            elif event_type == "Theft":
+                title = "🚨 절도 행위 감지"
+                message = f"절도 행위가 감지되었습니다.\n사람 수: {person_count}명\n신뢰도: {confidence}"
+            elif event_type == "Broken":
+                title = "🔨 파손 행위 감지"
+                message = f"파손 행위가 감지되었습니다.\n사람 수: {person_count}명\n신뢰도: {confidence}"
+            elif event_type == "Abandon":
+                title = "📦 유기 행위 감지"
+                message = f"유기 행위가 감지되었습니다.\n사람 수: {person_count}명\n신뢰도: {confidence}"
+            else:
+                title = "⚠️ 이상 행위 감지"
+                message = f"이상 행위가 감지되었습니다.\n사람 수: {person_count}명\n신뢰도: {confidence}"
+            
+            print(f"[GUI] AI 서버 알림 수신: {title} - {message}")
+            
+            # 시스템 알림 전송
+            try:
+                subprocess.run([
+                    'notify-send',
+                    title,
+                    message,
+                    '--urgency=critical',
+                    '--icon=dialog-warning'
+                ], check=True)
+                print(f"[GUI] 시스템 알림 전송: {title} - {message}")
+            except subprocess.CalledProcessError as e:
+                print(f"[GUI] 알림 전송 실패: {e}")
+            except FileNotFoundError:
+                print("[GUI] notify-send 명령어를 찾을 수 없습니다.")
+            
+        except Exception as e:
+            print(f"[GUI] 알림 처리 오류: {e}")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
