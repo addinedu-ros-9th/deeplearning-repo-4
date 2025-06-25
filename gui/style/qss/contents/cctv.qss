@@ -26,3 +26,13 @@
     padding: 0;
     margin: 0;
 }
+
+.duration_bar {
+    background-color: #ccc;
+    border-radius: {{radius}};
+}
+
+.current_bar {
+    background-color: {{primary}};
+    border-radius: {{radius}};
+}
