@@ -461,6 +461,18 @@ def process_pre_buffer_frames(pre_buffer_frames, pose_model, out, current_clip_m
     
     return current_clip_max_persons
 
+def detect_light_off(frame, prev_brightness):
+    """프레임의 밝기를 기반으로 전등 끔 상태를 감지"""
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    curr_brightness = np.mean(gray)
+    status = "Normal"
+    if curr_brightness < 80:
+        status = "Light OFF"
+    elif prev_brightness is not None and (prev_brightness - curr_brightness) > 10:
+        status = "Light OFF (Change)"
+    return curr_brightness, status
+
+
 def realtime_anomaly_detection(model_path, pose_model_path='yolov8n-pose.pt', sequence_length=SEQUENCE_LENGTH, udp_ip="0.0.0.0", udp_port=5005):
     """실시간 UDP 스트림 이상 감지 (cctv_udp_client.py와 호환)"""
     print("Loading models...")
@@ -492,6 +504,11 @@ def realtime_anomaly_detection(model_path, pose_model_path='yolov8n-pose.pt', se
     # 사람 수 추적을 위한 변수
     max_person_count = 0
     current_clip_max_persons = 0
+
+    # 전등 끔 프레임 감지
+    prev_brightness = None
+    light_off_frame_count = 0
+    light_off_min_frames = 5
     
     try:
         while True:
@@ -538,6 +555,28 @@ def realtime_anomaly_detection(model_path, pose_model_path='yolov8n-pose.pt', se
                     # 프레임에 사람 수 표시
                     cv2.putText(frame, f"Persons: {person_count}", 
                                 (20, 220), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+                    
+                    curr_brightness, light_off_status = detect_light_off(frame, prev_brightness)
+                    prev_brightness = curr_brightness
+
+                    # 연속 조건 적용
+                    if "Light OFF" in light_off_status:
+                        light_off_frame_count += 1
+                    else:
+                        light_off_frame_count = 0
+
+                    # 5프레임 이상 연속 감지 시에만 진짜로 표시
+                    if light_off_frame_count >= light_off_min_frames:
+                        display_light_status = light_off_status
+                        display_color = (0, 0, 255)
+                    else:
+                        display_light_status = "Normal"
+                        display_color = (0, 255, 0)
+
+                    cv2.putText(frame, f"Lighting: {display_light_status}", 
+                                (20, 280), cv2.FONT_HERSHEY_SIMPLEX, 0.7,
+                                display_color, 2)
+
                     
                     # 클립 저장 중이면 최대 사람 수 업데이트
                     if saving and person_count > current_clip_max_persons:
