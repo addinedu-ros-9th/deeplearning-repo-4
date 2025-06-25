@@ -21,3 +21,8 @@
     border: 1px solid #ccc;
     border-radius: {{radius}};
 }
+
+.video_wrap {
+    padding: 0;
+    margin: 0;
+}

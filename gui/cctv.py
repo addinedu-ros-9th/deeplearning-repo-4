@@ -33,10 +33,12 @@ class ClipPopupWidget(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
         self.bg.setProperty("class", "video_bg")
+        self.video_wrap.setProperty("class", "video_wrap")
         # self.video.setProperty("class", "video")
         # video는 QMediaPlayer로!
         self.video_widget = QVideoWidget(self)
-        self.video_layout = QVBoxLayout(self.bg)  # self.bg가 레이아웃 대상이라면
+        self.video_widget.setFixedSize(1280, 720)
+        self.video_layout = QVBoxLayout(self.video_wrap)  # self.bg가 레이아웃 대상이라면
         self.video_layout.addWidget(self.video_widget)
         self.video = QMediaPlayer(self)
         self.video.setVideoOutput(self.video_widget)
@@ -263,6 +265,7 @@ class CCTVWidget(QWidget):
                                 print("비디오 URL:", video_url)
                                 self.clip_popup_widget.video.setSource(QUrl(video_url))
                                 self.clip_popup_widget.video.play()
+
 
                                 print("[비디오 - 응답 내용]:", response)
                                 # self.refresh()  # 테이블 다시 그리기
