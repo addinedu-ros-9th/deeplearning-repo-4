@@ -36,3 +36,44 @@
     background-color: {{primary}};
     border-radius: {{radius}};
 }
+
+.playBtn {
+    qproperty-icon: url("./style/images/ico-dropdown.svg");
+    qproperty-iconSize: 36px 36px;
+    background-color: white;
+    border: 1px solid {{primary}};
+    border-radius: {{radius}};
+}
+
+.playBtn:hover {
+    background-color: rgba(3, 180, 200, 0.1);
+}
+
+.playBtn.play {
+    qproperty-icon: url("./style/images/ico-play.png");
+    qproperty-iconSize: 30px 30px;
+}
+
+.playBtn.pause {
+    qproperty-icon: url("./style/images/ico-pause.png");
+    qproperty-iconSize: 30px 30px;
+}
+
+.forwardBtn {
+    qproperty-icon: url("./style/images/ico-forward.png");
+    qproperty-iconSize: 30px 30px;
+    background-color: white;
+    border-radius: {{radius}};
+}
+
+.backwardBtn {
+    qproperty-icon: url("./style/images/ico-backward.png");
+    qproperty-iconSize: 30px 30px;
+    background-color: white;
+    border-radius: {{radius}};
+}
+
+.forwardBtn:hover,
+.backwardBtn:hover {
+    background-color: #eee;
+}

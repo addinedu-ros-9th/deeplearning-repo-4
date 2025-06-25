@@ -8,6 +8,7 @@ chaeyeon_pc = "192.168.0.21" # 채연 pc
 beomjin_pc = "192.168.0.75" # 범진 pc
 # wonho_pc = local_ip # 원호 pc  
 # chaeyeon_pc = local_ip # 채연 pc
+# beomjin_pc = local_ip # 범진 pc
 
 AI_IP = chaeyeon_pc # AI 서버 IP
 AI_PORT = 5005
