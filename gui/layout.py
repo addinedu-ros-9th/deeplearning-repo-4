@@ -90,6 +90,7 @@ class LayoutWindow(QMainWindow):
         self.userBtn.setText(get_user_id())
         self.user_popover.refresh()
         self.cctv_widget.refresh()
+        self.detect_log_widget.refresh()
         
 
     def clickMenu1(self):

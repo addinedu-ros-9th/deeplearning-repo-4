@@ -11,6 +11,14 @@ import socket
 import numpy as np
 import struct
 from functools import partial
+import requests
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from modules.user_info import *
+
+from server.config import CENTRAL_IP, CENTRAL_PORT
 
 from style import apply_style
 
@@ -42,7 +50,6 @@ class DetectLogWidget(QWidget):
         self.toggle_bg.setProperty("class", "radius bg graye")
         self.text1.setProperty("class", "color-black size14 weight700")
         self.text2.setProperty("class", "color-black size14 weight700")
-        self.text3.setProperty("class", "color-black size14 weight700")
         self.toggle1.setProperty("class", "toggle") # 토글 버튼 오늘 
         self.toggle2.setProperty("class", "toggle active") # 토글 버튼 주간
         self.toggle3.setProperty("class", "toggle") # 토글 버튼 월간
@@ -67,20 +74,22 @@ class DetectLogWidget(QWidget):
         self.checkbox2.setChecked(True)
         self.checkbox3.setChecked(True)
         self.checkbox4.setChecked(True) 
-        self.human_min.setProperty("class", "spinbox") # 사람 수 스핀박스
-        self.human_max.setProperty("class", "spinbox")
+        # self.human_min.setProperty("class", "spinbox") # 사람 수 스핀박스
+        # self.human_max.setProperty("class", "spinbox")
         self.range1.setProperty("class", "align-center")
-        self.range2.setProperty("class", "align-center")
-        self.radio1.setProperty("class", "radiobox")
-        self.radio2.setProperty("class", "radiobox")
-        self.radio3.setProperty("class", "radiobox")
+        # self.range2.setProperty("class", "align-center")
+        self.radio1.setProperty("class", "radiobox") # 전체
+        self.radio2.setProperty("class", "radiobox") # 확인 완료
+        self.radio3.setProperty("class", "radiobox") # 미확인
         self.radio1.setChecked(True) 
         self.detect_table.setProperty("class", "table") 
         self.search_btn.setProperty("class", "btn outlined primary weight700") # 검색 버튼
 
+        self.period =  "weekend"
+
         # human_min 값 변경 시 이벤트 연결
-        self.human_min.valueChanged.connect(self.on_human_min_changed)
-        self.human_max.valueChanged.connect(self.on_human_max_changed)
+        # self.human_min.valueChanged.connect(self.on_human_min_changed)
+        # self.human_max.valueChanged.connect(self.on_human_max_changed)
 
         # 테이블 설정
         self.detect_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)# 테이블 수정 비활성화
@@ -92,66 +101,130 @@ class DetectLogWidget(QWidget):
         # 열 헤더 설정
         column = ["매장 명", "기록 시점", "불법행위 종류", "사람 수", "확인 여부", "녹화 클립", "삭제"]
         # 데이터 추가
-        data = [
-            ["GS25 금천점", "2023-06-21 14:30", "파손", "3", "미확인", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 15:00", "유기", "2", "미확인", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 15:30", "절도", "5", "미확인", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 16:00", "전등 끔", "1", "미확인", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 14:30", "파손", "3", "확인 완료", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 15:00", "유기", "2", "확인 완료", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 15:30", "절도", "5", "확인 완료", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 16:00", "전등 끔", "1", "확인 완료", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 14:30", "파손", "3", "확인 완료", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 15:00", "유기", "2", "확인 완료", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 15:30", "절도", "5", "확인 완료", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 16:00", "전등 끔", "1", "확인 완료", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 14:30", "파손", "3", "확인 완료", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 15:00", "유기", "2", "확인 완료", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 15:30", "절도", "5", "확인 완료", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 16:00", "전등 끔", "1", "확인 완료", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 16:00", "전등 끔", "1", "확인 완료", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 16:00", "전등 끔", "1", "확인 완료", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 16:00", "전등 끔", "1", "확인 완료", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 16:00", "전등 끔", "1", "확인 완료", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 16:00", "전등 끔", "1", "확인 완료", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 16:00", "전등 끔", "1", "확인 완료", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 16:00", "전등 끔", "1", "확인 완료", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 16:00", "전등 끔", "1", "확인 완료", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 16:00", "전등 끔", "1", "확인 완료", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 16:00", "전등 끔", "1", "확인 완료", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 16:00", "전등 끔", "1", "확인 완료", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 16:00", "전등 끔", "1", "확인 완료", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 16:00", "전등 끔", "1", "확인 완료", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 16:00", "전등 끔", "1", "확인 완료", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 16:00", "전등 끔", "1", "확인 완료", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 16:00", "전등 끔", "1", "확인 완료", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 16:00", "전등 끔", "1", "확인 완료", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 16:00", "전등 끔", "1", "확인 완료", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 16:00", "전등 끔", "1", "확인 완료", "클립 보기", "삭제"],
-            ["GS25 금천점", "2023-06-21 16:00", "전등 끔", "1", "확인 완료", "클립 보기", "삭제"],
+        self.data = [
+            {
+                "store_name": "GS 금천점",
+                "time": "2025-01-01 12:00:00",
+                "event_type": "broken",
+                "person_count": str(2),
+                "is_checked": 0,
+                "video_url": "video_34.mp4"
+            }
         ]
         # 행 번호 숨기기
         self.detect_table.verticalHeader().setVisible(False)
         
         # 테이블 크기 조정
-        self.detect_table.setRowCount(len(data))  # 데이터 행 개수만큼 설정
         self.detect_table.setColumnCount(len(column))  # 열 개수 설정
         self.detect_table.setHorizontalHeaderLabels(column)
 
+        # 열 너비 설정
+        column_widths = [194, 194, 194, 194, 200, 140, 100]
+        for i, width in enumerate(column_widths):
+            self.detect_table.setColumnWidth(i, width)
         
-        for row, row_data in enumerate(data):
-            for col, value in enumerate(row_data):
+        # 특정 열을 화면 크기에 맞게 늘어나도록 설정
+        self.detect_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)  # 첫 번째 열
+        self.detect_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)  # 두 번째 열
+        self.detect_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)  # 세 번째 열
+        self.detect_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)  # 네 번째 열
+
+        # 오늘 / 주간 / 월간 토글 버튼 클릭 이벤트 연결
+        self.toggle1.clicked.connect(self.click_toggle1)
+        self.toggle2.clicked.connect(self.click_toggle2)
+        self.toggle3.clicked.connect(self.click_toggle3)
+        self.year1.valueChanged.connect(self.change_date)
+        self.year2.valueChanged.connect(self.change_date)
+        self.month1.valueChanged.connect(self.change_date)
+        self.month2.valueChanged.connect(self.change_date)
+        self.date1.valueChanged.connect(self.change_date)
+        self.date2.valueChanged.connect(self.change_date)
+        self.search_btn.clicked.connect(self.refresh)
+
+        self.refresh()
+
+    def refresh(self):
+        print("detect_log refesh")
+        # self.title.setText(get_user_info()['store_name'])
+        self.get_table_data()
+        self.drawTable()
+
+    def get_table_data(self):
+        url = f"http://{CENTRAL_IP}:{CENTRAL_PORT}/load/detect_log/filter"
+
+        def get_date(year, month, date):
+            if self.period is None:
+                if month < 10:
+                    month1 = f"0{month}"
+                else:
+                    month1 = month
+
+                if date < 10:
+                    date1 = f"0{date}"
+                else:
+                    date1 = date    
+                return f"{year}-{month1}-{date1}"
+            else:
+                return None
+        
+        def get_is_checked():
+            if self.radio1.isChecked():
+                return [0, 1]  # 전체
+            elif self.radio2.isChecked():
+                return [1]  # 확인 완료
+            elif self.radio3.isChecked():
+                return [0]
+            return None
+
+        req_data = {
+            "user_id": get_user_id(),
+            "period": self.period,  
+            "start_date": get_date(self.year1.value(), self.month1.value(), self.date1.value()),
+            "end_date": get_date(self.year2.value(), self.month2.value(), self.date2.value()),
+            "event_type": [
+                "broken" if self.checkbox1.isChecked() else '',
+                "abandon" if self.checkbox2.isChecked() else '',
+                "theft" if self.checkbox3.isChecked() else '',
+                "light_off" if self.checkbox4.isChecked() else ''
+            ],
+            "is_checked": get_is_checked()
+        }
+        # None 값 제거
+        req_data["event_type"] = [e for e in req_data["event_type"] if e is not None]
+        print("req_data:", req_data)
+        try:
+            response = requests.post(url, json=req_data)
+            if response.status_code == 200:
+                result = response.json()
+                print("[cctv 알림 - 응답 내용]:", result)
+                self.data = result
+                # return result
+            else:
+                print(f"요청 실패: {response.status_code}")
+                return 
+        except requests.RequestException as e:
+            print(f"요청 중 오류 발생: {e}")
+            return 
+        
+    def drawTable(self):
+        self.detect_table.setRowCount(len(self.data))  # 데이터 행 개수만큼 설정
+        for row, row_data in enumerate(self.data):
+            for col, value in enumerate(row_data.values()):
                 if col == 2: # 불법행위 comboBox 종류 열
-                    if row_data[4] == "확인 완료":
+                    if row_data['is_checked'] == 1:
                         behavior_label = QLabel(value)
-                        if value == "파손" : 
+                        if value == "broken" : 
                             behavior_label.setProperty("class", "label behavior broken")
-                        elif value == "유기" :
+                            behavior_label.setText("파손")
+                        elif value == "abandon" :
                             behavior_label.setProperty("class", "label behavior abandon")
-                        elif value == "절도" :
+                            behavior_label.setText("유기")
+                        elif value == "theft" :
                             behavior_label.setProperty("class", "label behavior theft")
-                        elif value == "전등 끔" :
+                            behavior_label.setText("절도")
+                        elif value == "light_off" :
                             behavior_label.setProperty("class", "label behavior light_off")
+                            behavior_label.setText("전등 끔")
                             
                         behavior_label.setAlignment(Qt.AlignmentFlag.AlignCenter)  # 가운데 정렬
 
@@ -169,7 +242,14 @@ class DetectLogWidget(QWidget):
                         combo_box = QComboBox()
                         combo_box.addItems(["파손", "유기", "절도", "전등 끔"])
                         combo_box.setProperty("class", "comboBox behavior")
-                        combo_box.setCurrentText(value)  # 기본값 설정
+                        if value == "broken" : 
+                            combo_box.setCurrentText("파손")
+                        elif value == "abandon" :
+                            combo_box.setCurrentText("유기")
+                        elif value == "theft" :
+                            combo_box.setCurrentText("절도")
+                        elif value == "light_off" :
+                            combo_box.setCurrentText("전등 끔")
 
                         combo_confirm_button = QPushButton("변경")
                         combo_confirm_button.setProperty("class", "btn comfirm")
@@ -208,7 +288,7 @@ class DetectLogWidget(QWidget):
                         self.detect_table.setCellWidget(row, col, cell_widget)
 
                 elif col == 4:  # 확인 여부 열
-                    if value == "확인 완료" :
+                    if value == 1 :
                         confirm_label = QLabel("확인 완료")
                         confirm_label.setProperty("class", "label confirm")
                         confirm_label.setAlignment(Qt.AlignmentFlag.AlignCenter)  # 가운데 정렬
@@ -255,7 +335,8 @@ class DetectLogWidget(QWidget):
                     cell_widget = QWidget()
                     cell_widget.setLayout(layout)
                     self.detect_table.setCellWidget(row, col, cell_widget)
-                elif col == 6:  # 삭제 버튼 추가
+                    
+                    # 삭제 버튼 추가
                     delete_button = QPushButton("")
                     delete_button.setProperty("class", "btn delete")
                      # 삭제 버튼을 가운데 정렬하기 위한 레이아웃 설정
@@ -267,27 +348,11 @@ class DetectLogWidget(QWidget):
                     # 셀에 레이아웃 설정
                     cell_widget = QWidget()
                     cell_widget.setLayout(layout)
-                    self.detect_table.setCellWidget(row, col, cell_widget)
+                    self.detect_table.setCellWidget(row, 6, cell_widget)
                 else :
-                    item = QTableWidgetItem(value)
+                    item = QTableWidgetItem(str(value))
                     item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)  # 텍스트 가운데 정렬
                     self.detect_table.setItem(row, col, item)
-
-        # 열 너비 설정
-        column_widths = [194, 194, 194, 194, 200, 140, 100]
-        for i, width in enumerate(column_widths):
-            self.detect_table.setColumnWidth(i, width)
-        
-        # 특정 열을 화면 크기에 맞게 늘어나도록 설정
-        self.detect_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)  # 첫 번째 열
-        self.detect_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)  # 두 번째 열
-        self.detect_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)  # 세 번째 열
-        self.detect_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)  # 네 번째 열
-
-        # 오늘 / 주간 / 월간 토글 버튼 클릭 이벤트 연결
-        self.toggle1.clicked.connect(self.click_toggle1)
-        self.toggle2.clicked.connect(self.click_toggle2)
-        self.toggle3.clicked.connect(self.click_toggle3)
 
     def click_toggle1(self): # 오늘 클릭
         self.toggle1.setProperty("class", "toggle active")
@@ -299,6 +364,7 @@ class DetectLogWidget(QWidget):
         self.toggle2.style().polish(self.toggle2)
         self.toggle3.style().unpolish(self.toggle3)   
         self.toggle3.style().polish(self.toggle3)
+        self.period = "today"
 
     def click_toggle2(self): # 주간 클릭
         self.toggle1.setProperty("class", "toggle")
@@ -310,6 +376,7 @@ class DetectLogWidget(QWidget):
         self.toggle2.style().polish(self.toggle2)
         self.toggle3.style().unpolish(self.toggle3)   
         self.toggle3.style().polish(self.toggle3)
+        self.period = "weekend"
 
     def click_toggle3(self): # 월간 클릭
         self.toggle1.setProperty("class", "toggle")
@@ -321,14 +388,19 @@ class DetectLogWidget(QWidget):
         self.toggle2.style().polish(self.toggle2)
         self.toggle3.style().unpolish(self.toggle3)   
         self.toggle3.style().polish(self.toggle3)
+        self.period = "month"
 
-    def on_human_min_changed(self, value):
-        if value > self.human_max.value():
-            self.human_max.setValue(value)
-
-    def on_human_max_changed(self, value):
-        if value < self.human_min.value():
-            self.human_min.setValue(value)
+    def change_date(self):
+        self.toggle1.setProperty("class", "toggle")
+        self.toggle2.setProperty("class", "toggle")
+        self.toggle3.setProperty("class", "toggle")
+        self.toggle1.style().unpolish(self.toggle1)   
+        self.toggle1.style().polish(self.toggle1)
+        self.toggle2.style().unpolish(self.toggle2)   
+        self.toggle2.style().polish(self.toggle2)
+        self.toggle3.style().unpolish(self.toggle3)   
+        self.toggle3.style().polish(self.toggle3)
+        self.period = None
 
     def show_at(self, pos):
         """특정 위치에 팝오버 표시"""

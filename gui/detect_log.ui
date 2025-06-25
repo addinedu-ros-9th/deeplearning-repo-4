@@ -122,7 +122,7 @@
      <x>20</x>
      <y>66</y>
      <width>1210</width>
-     <height>120</height>
+     <height>76</height>
     </rect>
    </property>
    <property name="font">
@@ -139,29 +139,6 @@
   <widget class="QLabel" name="text2">
    <property name="geometry">
     <rect>
-     <x>40</x>
-     <y>130</y>
-     <width>120</width>
-     <height>36</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <family>Inter 18pt</family>
-     <weight>75</weight>
-     <bold>true</bold>
-    </font>
-   </property>
-   <property name="text">
-    <string>확인 여부</string>
-   </property>
-   <property name="margin">
-    <number>10</number>
-   </property>
-  </widget>
-  <widget class="QLabel" name="text3">
-   <property name="geometry">
-    <rect>
      <x>625</x>
      <y>86</y>
      <width>120</width>
@@ -176,7 +153,7 @@
     </font>
    </property>
    <property name="text">
-    <string>사람 수</string>
+    <string>확인 여부</string>
    </property>
    <property name="margin">
     <number>10</number>
@@ -254,76 +231,11 @@
     <string>전등 끔</string>
    </property>
   </widget>
-  <widget class="QSpinBox" name="human_min">
+  <widget class="QRadioButton" name="radio1">
    <property name="geometry">
     <rect>
      <x>745</x>
      <y>86</y>
-     <width>60</width>
-     <height>36</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <family>Inter 18pt</family>
-    </font>
-   </property>
-   <property name="minimum">
-    <number>1</number>
-   </property>
-   <property name="maximum">
-    <number>5</number>
-   </property>
-  </widget>
-  <widget class="QLabel" name="range2">
-   <property name="geometry">
-    <rect>
-     <x>815</x>
-     <y>86</y>
-     <width>20</width>
-     <height>36</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <family>Inter 18pt</family>
-     <weight>75</weight>
-     <bold>true</bold>
-    </font>
-   </property>
-   <property name="text">
-    <string>~</string>
-   </property>
-   <property name="margin">
-    <number>10</number>
-   </property>
-  </widget>
-  <widget class="QSpinBox" name="human_max">
-   <property name="geometry">
-    <rect>
-     <x>835</x>
-     <y>86</y>
-     <width>60</width>
-     <height>36</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <family>Inter 18pt</family>
-    </font>
-   </property>
-   <property name="minimum">
-    <number>1</number>
-   </property>
-   <property name="maximum">
-    <number>5</number>
-   </property>
-  </widget>
-  <widget class="QRadioButton" name="radio1">
-   <property name="geometry">
-    <rect>
-     <x>160</x>
-     <y>130</y>
      <width>60</width>
      <height>36</height>
     </rect>
@@ -340,8 +252,8 @@
   <widget class="QRadioButton" name="radio2">
    <property name="geometry">
     <rect>
-     <x>220</x>
-     <y>130</y>
+     <x>805</x>
+     <y>86</y>
      <width>100</width>
      <height>36</height>
     </rect>
@@ -358,8 +270,8 @@
   <widget class="QRadioButton" name="radio3">
    <property name="geometry">
     <rect>
-     <x>320</x>
-     <y>130</y>
+     <x>905</x>
+     <y>86</y>
      <width>100</width>
      <height>36</height>
     </rect>
@@ -377,9 +289,9 @@
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>206</y>
+     <y>162</y>
      <width>1210</width>
-     <height>624</height>
+     <height>670</height>
     </rect>
    </property>
    <property name="font">
@@ -720,14 +632,10 @@
   <zorder>toggle2</zorder>
   <zorder>toggle3</zorder>
   <zorder>text2</zorder>
-  <zorder>text3</zorder>
   <zorder>checkbox1</zorder>
   <zorder>checkbox2</zorder>
   <zorder>checkbox3</zorder>
   <zorder>checkbox4</zorder>
-  <zorder>human_min</zorder>
-  <zorder>range2</zorder>
-  <zorder>human_max</zorder>
   <zorder>radio1</zorder>
   <zorder>radio2</zorder>
   <zorder>radio3</zorder>
