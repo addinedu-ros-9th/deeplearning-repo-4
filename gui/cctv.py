@@ -10,6 +10,7 @@ import socket
 import numpy as np
 import struct
 import requests
+from functools import partial
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -203,11 +204,38 @@ class CCTVWidget(QWidget):
                     cell_widget.setLayout(layout)
                     self.detect_table.setCellWidget(row, col, cell_widget)
                 elif col == 2:  # 녹화 클립 열
-                    delete_button = QPushButton("")
-                    delete_button.setProperty("class", "btn clip small")
+                    def clip_clicked(tmp_row_data):
+                        url = f"http://{CENTRAL_IP}:{CENTRAL_GUI_PORT}/load/video"
+
+                        req_data = {
+                            "user_id": get_user_id(),
+                            "video_url": tmp_row_data['video_url'],  
+                        }
+
+                        print("변경 req_data:", req_data)
+                        try:
+                            response = requests.post(url, json=req_data)
+                            if response.status_code == 200:
+                                print('비디오 응답 성공')
+                                
+                                print("[비디오 - 응답 내용]:", response)
+                                # self.refresh()  # 테이블 다시 그리기
+                                # return result
+                            else:
+                                print(f"요청 실패: {response.status_code}")
+                                return 
+                        except requests.RequestException as e:
+                            print(f"요청 중 오류 발생: {e}")
+                            return 
+
+                    clip_button = QPushButton("")
+                    clip_button.setProperty("class", "btn clip small")
+                    clip_button.clicked.connect(
+                        partial(clip_clicked, row_data)
+                    )
                     # 삭제 버튼을 가운데 정렬하기 위한 레이아웃 설정
                     layout = QHBoxLayout()
-                    layout.addWidget(delete_button)
+                    layout.addWidget(clip_button)
                     layout.setAlignment(Qt.AlignmentFlag.AlignCenter)  # 가운데 정렬
                     layout.setContentsMargins(0, 0, 0, 0)  # 여백 제거
 
