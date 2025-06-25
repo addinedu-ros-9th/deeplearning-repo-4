@@ -200,16 +200,6 @@ class DetectLogWidget(QWidget):
             print(f"요청 중 오류 발생: {e}")
             return 
         
-    def changeBehavior(self, timestamp, event_type):
-        url = f"http://{CENTRAL_IP}:{CENTRAL_GUI_PORT}/load/detect_log/filter"
-
-        req_data = {
-            "user_id": get_user_id(),
-            "store_name": get_user_info()['store_name'],  
-            "timestamp": timestamp,
-            "event_type": event_type
-        }
-
     def drawTable(self):
         self.detect_table.setRowCount(len(self.data))  # 데이터 행 개수만큼 설정
         for row, row_data in enumerate(self.data):
@@ -355,6 +345,32 @@ class DetectLogWidget(QWidget):
 
                         confirm_button = QPushButton("불법 확정")
                         confirm_button.setProperty("class", "btn confirm")
+
+                        def confirm_clicked(tmp_row_data):
+                            url = f"http://{CENTRAL_IP}:{CENTRAL_GUI_PORT}/change/is_checked"
+
+                            req_data = {
+                                "user_id": get_user_id(),
+                                "store_name": get_user_info()['store_name'],  
+                                "timestamp": tmp_row_data['time'],
+                            }
+
+                            print("확인 req_data:", req_data)
+                            try:
+                                response = requests.post(url, json=req_data)
+                                if response.status_code == 200:
+                                    self.refresh()  # 테이블 다시 그리기
+                                    # return result
+                                else:
+                                    print(f"요청 실패: {response.status_code}")
+                                    return 
+                            except requests.RequestException as e:
+                                print(f"확인 요청 중 오류 발생: {e}")
+                                return
+                            
+                        confirm_button.clicked.connect(
+                            partial(confirm_clicked, row_data)
+                        )
                         confirm_button.setFixedSize(100, 30)  # 버튼 크기 설정
 
                         layout = QHBoxLayout()
