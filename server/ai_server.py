@@ -408,17 +408,25 @@ def process_prediction_buffer(pred_buffer, current_prediction, prev_prediction):
         prev_prediction = current_prediction
     return prev_prediction
 
-def should_start_saving(pred_buffer, saving, last_saved_action):
+def should_start_saving(pred_buffer, saving, last_saved_action, light_off_frame_count, light_off_min_frames):
     """저장 시작 조건 확인"""
-    if (
+    # 기존 AI 예측 기반 저장 조건
+    ai_condition = (
         len(pred_buffer) == PREDICTION_BUFFER_SIZE and
         len(set(pred_buffer)) == 1 and
         pred_buffer[0] != 0 and
         not saving and
         pred_buffer[0] != last_saved_action
-    ):
-        return True
-    return False
+    )
+    
+    # Light OFF 기반 저장 조건
+    light_off_condition = (
+        light_off_frame_count >= light_off_min_frames and
+        not saving and
+        "light_off" != last_saved_action
+    )
+    
+    return ai_condition or light_off_condition
 
 def create_video_writer(filename, frame_shape):
     """비디오 라이터 생성"""
@@ -636,13 +644,22 @@ def realtime_anomaly_detection(model_path, pose_model_path='yolov8n-pose.pt', se
                         frame = draw_keypoints(frame, keypoints)
                     
                     # 저장 시작 조건 확인
-                    if should_start_saving(pred_buffer, saving, last_saved_action):
+                    if should_start_saving(pred_buffer, saving, last_saved_action, light_off_frame_count, light_off_min_frames):
                         saving = True
                         save_countdown = SAVE_COUNTDOWN
-                        detected_action = list(set(pred_buffer))[0]
-                        last_saved_action = detected_action
+                        
+                        # Light OFF 상태인지 확인
+                        if light_off_frame_count >= light_off_min_frames:
+                            detected_action = "light_off"
+                            action_name = "Light_OFF"
+                            last_saved_action = "light_off"
+                        else:
+                            # 기존 AI 예측 기반
+                            detected_action = list(set(pred_buffer))[0]
+                            action_name = LABEL_NAMES[detected_action]
+                            last_saved_action = detected_action
+                        
                         dt_str = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-                        action_name = LABEL_NAMES[detected_action]
                         
                         # 클립 프레임 버퍼 초기화
                         clip_frames = []
@@ -670,17 +687,24 @@ def realtime_anomaly_detection(model_path, pose_model_path='yolov8n-pose.pt', se
                         if save_countdown == 0:
                             saving = False
                             
-                            abnormal_preds = [p for p in clip_predictions if p not in (0, None)]
-                            if abnormal_preds:
-                                major_action = Counter(abnormal_preds).most_common(1)[0][0]
-                                action_name = LABEL_NAMES[major_action]
-                                # major_action의 confidence 구하기
-                                confidence = probs[major_action] if 'probs' in locals() else 1.0
-                                confidence_str = f"{confidence:.2f}"
-                                # 파일명에 confidence 포함
-                                send_clip_frames_to_central_server(clip_frames, action_name, current_clip_max_persons, dt_str, confidence_str)
+                            # Light OFF 상태였는지 확인
+                            if detected_action == "light_off":
+                                # Light OFF 클립 저장
+                                confidence_str = "1.00"  # Light OFF는 100% 확신
+                                send_clip_frames_to_central_server(clip_frames, "Light_OFF", current_clip_max_persons, dt_str, confidence_str)
                             else:
-                                print("Clip was mostly Normal, so it was not sent.")
+                                # 기존 AI 예측 기반 처리
+                                abnormal_preds = [p for p in clip_predictions if p not in (0, None)]
+                                if abnormal_preds:
+                                    major_action = Counter(abnormal_preds).most_common(1)[0][0]
+                                    action_name = LABEL_NAMES[major_action]
+                                    # major_action의 confidence 구하기
+                                    confidence = probs[major_action] if 'probs' in locals() else 1.0
+                                    confidence_str = f"{confidence:.2f}"
+                                    # 파일명에 confidence 포함
+                                    send_clip_frames_to_central_server(clip_frames, action_name, current_clip_max_persons, dt_str, confidence_str)
+                                else:
+                                    print("Clip was mostly Normal, so it was not sent.")
                             
                             last_saved_action = None
                             clip_predictions = []
