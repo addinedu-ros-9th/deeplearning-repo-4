@@ -1,17 +1,9 @@
-from calendar import c
 import sys, os
-import time
-import PyQt6
 from PyQt6.uic import loadUi
 from PyQt6 import *
 from PyQt6.QtGui import *
 from PyQt6.QtCore import *
 from PyQt6.QtWidgets import *
-import cv2
-import socket
-from networkx import draw
-import numpy as np
-import struct
 from functools import partial
 import requests
 import sys

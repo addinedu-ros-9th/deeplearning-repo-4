@@ -1,15 +1,3 @@
-import pymysql
-
-# MySQL 연결 정보
-conn = pymysql.connect(
-    host='localhost',
-    user='root',
-    password='0000',
-    db='GigachadDb',
-    port=3306,
-    charset='utf8'
-)
-
 user_id = ''
 user_info = {'name': '', 'email': '', 'store_name': ''}
 
