@@ -1,3 +1,4 @@
+from calendar import c
 import sys, os
 import time
 import PyQt6
@@ -8,6 +9,7 @@ from PyQt6.QtCore import *
 from PyQt6.QtWidgets import *
 import cv2
 import socket
+from networkx import draw
 import numpy as np
 import struct
 from functools import partial
@@ -18,7 +20,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from modules.user_info import *
 
-from server.config import CENTRAL_IP, CENTRAL_PORT
+from server.config import CENTRAL_IP, CENTRAL_GUI_PORT
 
 from style import apply_style
 
@@ -85,7 +87,7 @@ class DetectLogWidget(QWidget):
         self.detect_table.setProperty("class", "table") 
         self.search_btn.setProperty("class", "btn outlined primary weight700") # 검색 버튼
 
-        self.period =  "weekend"
+        self.period =  "week"
 
         # human_min 값 변경 시 이벤트 연결
         # self.human_min.valueChanged.connect(self.on_human_min_changed)
@@ -150,7 +152,7 @@ class DetectLogWidget(QWidget):
         self.drawTable()
 
     def get_table_data(self):
-        url = f"http://{CENTRAL_IP}:{CENTRAL_PORT}/load/detect_log/filter"
+        url = f"http://{CENTRAL_IP}:{CENTRAL_GUI_PORT}/load/detect_log/filter"
 
         def get_date(year, month, date):
             if self.period is None:
@@ -206,6 +208,16 @@ class DetectLogWidget(QWidget):
             print(f"요청 중 오류 발생: {e}")
             return 
         
+    def changeBehavior(self, timestamp, event_type):
+        url = f"http://{CENTRAL_IP}:{CENTRAL_GUI_PORT}/load/detect_log/filter"
+
+        req_data = {
+            "user_id": get_user_id(),
+            "store_name": get_user_info()['store_name'],  
+            "timestamp": timestamp,
+            "event_type": event_type
+        }
+
     def drawTable(self):
         self.detect_table.setRowCount(len(self.data))  # 데이터 행 개수만큼 설정
         for row, row_data in enumerate(self.data):
@@ -254,8 +266,17 @@ class DetectLogWidget(QWidget):
                         combo_confirm_button = QPushButton("변경")
                         combo_confirm_button.setProperty("class", "btn comfirm")
                         
-                        def change_value(combo_box, combo_confirm_button, original_value):
-                            if combo_box.currentText() == original_value:
+                        def change_value(tmp_row_data, combo_box, combo_confirm_button):
+                            if combo_box.currentText() == "파손":
+                                tmp_behavior = "broken"
+                            elif combo_box.currentText() == "유기":
+                                tmp_behavior = "abandon"
+                            elif combo_box.currentText() == "절도":
+                                tmp_behavior = "theft"
+                            elif combo_box.currentText() == "전등 끔":
+                                tmp_behavior = "light_off"
+                             
+                            if tmp_behavior == tmp_row_data['event_type']:
                                 combo_confirm_button.setProperty("class", "btn comfirm")
                                 combo_confirm_button.style().unpolish(combo_confirm_button)   
                                 combo_confirm_button.style().polish(combo_confirm_button)
@@ -265,15 +286,48 @@ class DetectLogWidget(QWidget):
                                 combo_confirm_button.style().polish(combo_confirm_button)
 
                         combo_box.currentIndexChanged.connect(
-                            partial(change_value, combo_box, combo_confirm_button, value)
+                            partial(change_value, row_data, combo_box, combo_confirm_button)
                         )
 
-                        def confirm_clicked(combo_box, original_value):
-                            if combo_box.currentText() != original_value:
-                                print("변경 로직 클릭")  # 여기에 확인 버튼 클릭 시 처리할 로직을 추가하세요.
+                        def confirm_clicked(tmp_row_data, combo_box):
+                            if combo_box.currentText() == "파손":
+                                changed_behavior = "broken"
+                            elif combo_box.currentText() == "유기":
+                                changed_behavior = "abandon"
+                            elif combo_box.currentText() == "절도":
+                                changed_behavior = "theft"
+                            elif combo_box.currentText() == "전등 끔":
+                                changed_behavior = "light_off"
+                             
+                            if changed_behavior != tmp_row_data['event_type']:
+                                url = f"http://{CENTRAL_IP}:{CENTRAL_GUI_PORT}/change/event_type"
+
+                                req_data = {
+                                    "user_id": get_user_id(),
+                                    "store_name": get_user_info()['store_name'],  
+                                    "timestamp": tmp_row_data['time'],
+                                    "event_type": changed_behavior,
+                                }
+
+                                print("변경 req_data:", req_data)
+                                try:
+                                    response = requests.post(url, json=req_data)
+                                    if response.status_code == 200:
+                                        result = response.json()
+                                        print("[변경 - 응답 내용]:", result)
+                                        self.refresh()  # 테이블 다시 그리기
+                                        # return result
+                                    else:
+                                        print(f"요청 실패: {response.status_code}")
+                                        return 
+                                except requests.RequestException as e:
+                                    print(f"요청 중 오류 발생: {e}")
+                                    return 
+
+
                         
                         combo_confirm_button.clicked.connect(
-                            partial(confirm_clicked, combo_box, value)
+                            partial(confirm_clicked, row_data, combo_box)
                         )
 
                         layout = QHBoxLayout()
@@ -376,7 +430,7 @@ class DetectLogWidget(QWidget):
         self.toggle2.style().polish(self.toggle2)
         self.toggle3.style().unpolish(self.toggle3)   
         self.toggle3.style().polish(self.toggle3)
-        self.period = "weekend"
+        self.period = "week"
 
     def click_toggle3(self): # 월간 클릭
         self.toggle1.setProperty("class", "toggle")
