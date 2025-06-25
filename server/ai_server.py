@@ -556,6 +556,7 @@ def realtime_anomaly_detection(model_path, pose_model_path='yolov8n-pose.pt', se
     last_saved_action = None
     prev_prediction = None
     clip_predictions = []
+    clip_probabilities = []  # 클립 기간 동안의 모든 예측 확률 저장
     pre_buffer_frames = []
     
     # 사람 수 추적을 위한 변수
@@ -710,14 +711,23 @@ def realtime_anomaly_detection(model_path, pose_model_path='yolov8n-pose.pt', se
                             action_name = LABEL_NAMES[detected_action]
                             last_saved_action = detected_action
                             # 이상 행위 시스템 알림
-                            confidence = probs[detected_action] if 'probs' in locals() else 1.0
-                            confidence_str = f"{confidence:.2f}"
+                            # 현재 프레임의 확률을 클립 확률에 저장
+                            if 'probs' in locals():
+                                clip_probabilities.append(probs.copy())
+                                # 해당 행위의 confidence 사용
+                                current_confidence = probs[detected_action]
+                                clip_confidences = [probs[detected_action] for probs in clip_probabilities]
+                                max_confidence = np.max(clip_confidences)
+                            else:
+                                max_confidence = 1.0
+                            confidence_str = f"{max_confidence:.2f}"
                             send_notification(action_name, person_count, confidence_str)
                         
                         dt_str = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
                         
                         # 클립 프레임 버퍼 초기화
                         clip_frames = []
+                        # clip_probabilities는 이미 현재 프레임의 확률이 저장되어 있으므로 초기화하지 않음
                         
                         # 새 클립 시작 시 사람 수 초기화
                         current_clip_max_persons = person_count
@@ -737,6 +747,9 @@ def realtime_anomaly_detection(model_path, pose_model_path='yolov8n-pose.pt', se
 
                         if current_prediction is not None:
                             clip_predictions.append(current_prediction)
+                            # 현재 프레임의 예측 확률 저장
+                            if 'probs' in locals():
+                                clip_probabilities.append(probs.copy())
                         save_countdown -= 1
 
                         if save_countdown == 0:
@@ -751,11 +764,15 @@ def realtime_anomaly_detection(model_path, pose_model_path='yolov8n-pose.pt', se
                                 # 기존 AI 예측 기반 처리
                                 abnormal_preds = [p for p in clip_predictions if p not in (0, None)]
                                 if abnormal_preds:
-                                    major_action = Counter(abnormal_preds).most_common(1)[0][0]
-                                    action_name = LABEL_NAMES[major_action]
-                                    # major_action의 confidence 구하기
-                                    confidence = probs[major_action] if 'probs' in locals() else 1.0
-                                    confidence_str = f"{confidence:.2f}"
+                                    # detected_action 사용 (저장 시작 시 결정된 행위)
+                                    action_name = LABEL_NAMES[detected_action]
+                                    # 해당 행위의 최대 confidence 사용
+                                    if clip_probabilities:
+                                        clip_confidences = [probs[detected_action] for probs in clip_probabilities]
+                                        max_confidence = np.max(clip_confidences)
+                                    else:
+                                        max_confidence = 1.0
+                                    confidence_str = f"{max_confidence:.2f}"
                                     # 파일명에 confidence 포함
                                     send_clip_frames_to_central_server(clip_frames, action_name, current_clip_max_persons, dt_str, confidence_str)
                                 else:
@@ -763,6 +780,7 @@ def realtime_anomaly_detection(model_path, pose_model_path='yolov8n-pose.pt', se
                             
                             last_saved_action = None
                             clip_predictions = []
+                            clip_probabilities = []  # 클립 확률 버퍼 초기화
                             current_clip_max_persons = 0  # 클립 저장 후 사람 수 초기화
                             clip_frames = []  # 클립 프레임 버퍼 초기화
                     
