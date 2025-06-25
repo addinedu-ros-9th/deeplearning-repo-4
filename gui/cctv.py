@@ -244,6 +244,12 @@ class CCTVWidget(QWidget):
                             response = requests.get(url, json=req_data)
                             if response.status_code == 200:
                                 print('비디오 응답 성공')
+                                # 응답 파일 타입 확인
+                                content_type = response.headers.get('Content-Type', '')
+                                print("응답 Content-Type:", content_type)
+                                if 'video' not in content_type:
+                                    print(f"응답이 비디오가 아닙니다: {content_type}")
+                                    return
                                 # 화면 중앙에 팝업 표시
                                 parent_rect = self.rect()
                                 popup_rect = self.clip_popup_widget.rect()
