@@ -695,6 +695,10 @@ def realtime_anomaly_detection(model_path, pose_model_path='yolov8n-pose.pt', se
                     
                     # 저장 시작 조건 확인
                     if should_start_saving(pred_buffer, saving, last_saved_action, light_off_frame_count, light_off_min_frames):
+                        # 사람이 감지되지 않았으면 저장하지 않음
+                        if person_count == 0:
+                            continue
+                            
                         saving = True
                         save_countdown = SAVE_COUNTDOWN
                         
