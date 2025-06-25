@@ -5,6 +5,9 @@ from PyQt6 import *
 from PyQt6.QtGui import *
 from PyQt6.QtCore import *
 from PyQt6.QtWidgets import *
+from PyQt6.QtMultimedia import QMediaPlayer
+from PyQt6.QtMultimediaWidgets import QVideoWidget
+
 import cv2
 import socket
 import numpy as np
@@ -21,6 +24,28 @@ from server.config import CENTRAL_IP, CENTRAL_GUI_PORT
 
 from style import apply_style
 
+class ClipPopupWidget(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        loadUi("video_popup.ui", self)
+        self.setObjectName("clipPopup") 
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Popup)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+
+        self.bg.setProperty("class", "video_bg")
+        # self.video.setProperty("class", "video")
+        # video는 QMediaPlayer로!
+        self.video_widget = QVideoWidget(self)
+        self.video_layout = QVBoxLayout(self.bg)  # self.bg가 레이아웃 대상이라면
+        self.video_layout.addWidget(self.video_widget)
+        self.video = QMediaPlayer(self)
+        self.video.setVideoOutput(self.video_widget)
+
+    def show_at(self, pos):
+        """특정 위치에 팝오버 표시"""
+        self.move(pos)
+        self.show()        
+
 class CCTVWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -30,8 +55,10 @@ class CCTVWidget(QWidget):
         # self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.title.setText("GS25 금천점")
         self.comboBox.setStyleSheet("")
-        
         self.detect_table.setProperty("class", "table small")
+
+        self.clip_popup_widget = ClipPopupWidget(self)
+        
         
         # 네트워크 연결 설정
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -212,12 +239,25 @@ class CCTVWidget(QWidget):
                             "video_url": tmp_row_data['video_url'],  
                         }
 
-                        print("변경 req_data:", req_data)
+                        print("클립 req_data:", req_data)
                         try:
-                            response = requests.post(url, json=req_data)
+                            response = requests.get(url, json=req_data)
                             if response.status_code == 200:
                                 print('비디오 응답 성공')
-                                
+                                # 화면 중앙에 팝업 표시
+                                parent_rect = self.rect()
+                                popup_rect = self.clip_popup_widget.rect()
+                                center_pos = self.mapToGlobal(parent_rect.center() - popup_rect.center())
+                                center_pos.setX(center_pos.x() - 95)
+                                center_pos.setY(center_pos.y() - 25)
+                                self.clip_popup_widget.show_at(center_pos)
+
+                                # 비디오 수신
+                                video_url = f'http://{CENTRAL_IP}:{CENTRAL_GUI_PORT}/load/video?video_url={tmp_row_data['video_url']}'
+                                print("비디오 URL:", video_url)
+                                self.clip_popup_widget.video.setSource(QUrl(video_url))
+                                self.clip_popup_widget.video.play()
+
                                 print("[비디오 - 응답 내용]:", response)
                                 # self.refresh()  # 테이블 다시 그리기
                                 # return result
