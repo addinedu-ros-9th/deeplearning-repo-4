@@ -35,9 +35,9 @@ class CCTVWidget(QWidget):
         # 네트워크 연결 설정
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
-            self.sock.bind(('0.0.0.0', 5006))  # UDP 수신 포트
+            self.sock.bind(('0.0.0.0', 6007))  # UDP 수신 포트
             self.sock.settimeout(0.1)
-            print(f"[CCTV] UDP 수신 대기 중: 0.0.0.0:5006")
+            print(f"[CCTV] UDP 수신 대기 중: 0.0.0.0:6007")
         except Exception as e:
             print(f"[CCTV] UDP 소켓 설정 실패: {e}")
             self.sock = None

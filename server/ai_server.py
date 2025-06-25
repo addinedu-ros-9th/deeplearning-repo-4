@@ -17,11 +17,11 @@ import socket
 import struct
 import json
 
-from config import RECIEVER_IP, RECIEVER_PORT, CENTRAL_IP, CENTRAL_PORT
+from config import RECIEVER_IP, RECIEVER_PORT, CENTRAL_IP, CENTRAL_PORT, CENTRAL_GUI_IP, CENTRAL_GUI_PORT
 
 # GUI UDP 통신을 위한 설정 추가
-GUI_UDP_IP = CENTRAL_IP  # GUI IP 주소
-GUI_UDP_PORT = 5006  # GUI UDP 포트
+GUI_UDP_IP = CENTRAL_GUI_IP  # GUI IP 주소
+GUI_UDP_PORT = CENTRAL_GUI_PORT  # GUI UDP 포트
 
 # ai_server.py가 있는 디렉토리의 부모 디렉토리를 경로에 추가
 # 이렇게 하면 deeplearning-repo-4 폴더를 기준으로 anomaly_detection 모듈을 찾을 수 있음
