@@ -151,7 +151,7 @@ def predict_video(model, video_path, pose_model, threshold=0.5, original_fps=5, 
     # 다중 클래스 분류를 위한 임계값 설정
     framewise_preds = np.argmax(anomaly_scores_array, axis=1)
     print("framewise_preds:", framewise_preds.tolist())  # 예측 시퀀스 출력
-    predicted_label = get_abnormal_label(framewise_preds, min_length=7)
+    predicted_label = get_abnormal_label(framewise_preds, min_length=5)
     print("Predicted label by abnormal rule:", predicted_label)
     return max_score, anomaly_scores, frames, predicted_label
 
