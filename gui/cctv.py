@@ -22,11 +22,10 @@ import json
 from sympy import sec
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# 사용자 모듈
 from modules.user_info import *
-
-from server.config import CENTRAL_IP, CENTRAL_GUI_PORT
 from video_popup import VideoPopupWidget
-
+from server.config import CENTRAL_IP, CENTRAL_GUI_PORT
 from style import apply_style
 
 

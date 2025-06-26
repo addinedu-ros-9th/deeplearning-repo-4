@@ -130,6 +130,20 @@ class VideoPopupWidget(QWidget):
             pos = min(self.video.duration(), self.video.position() + 5000)
         self.video.setPosition(pos)
 
+    def mousePressEvent(self, event):
+        # 팝업 바깥 클릭 시 닫기
+        if not self.rect().contains(event.pos()):
+            self.close()
+            self.video.pause()
+        else:
+            super().mousePressEvent(event)
+    
+    def focusOutEvent(self, event):
+        # 포커스가 바깥으로 나가면 닫기
+        self.close()
+        self.video.pause()
+        super().focusOutEvent(event)
+        
     def show_at(self, pos):
         """특정 위치에 팝오버 표시"""
         self.move(pos)
