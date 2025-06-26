@@ -82,7 +82,7 @@ class DetectLogWidget(QWidget):
         self.period =  "week"
 
         self.video_popup_widget = VideoPopupWidget(self)
-        
+
         # human_min 값 변경 시 이벤트 연결
         # self.human_min.valueChanged.connect(self.on_human_min_changed)
         # self.human_max.valueChanged.connect(self.on_human_max_changed)
@@ -462,6 +462,32 @@ class DetectLogWidget(QWidget):
                     cell_widget = QWidget()
                     cell_widget.setLayout(layout)
                     self.detect_table.setCellWidget(row, 6, cell_widget)
+
+                    def delete_clicked(tmp_row_data):
+                        url = f"http://{CENTRAL_IP}:{CENTRAL_GUI_PORT}/delete/video"
+
+                        req_data = {
+                            "user_id": get_user_id(),
+                            "video_url": tmp_row_data['video_url'],
+                        }
+
+                        print("확인 req_data:", req_data)
+                        try:
+                            response = requests.post(url, json=req_data)
+                            if response.status_code == 200:
+                                self.refresh()  # 테이블 다시 그리기
+                                # return result
+                            else:
+                                print(f"요청 실패: {response.status_code}")
+                                return 
+                        except requests.RequestException as e:
+                            print(f"확인 요청 중 오류 발생: {e}")
+                            return
+                        
+                    delete_button.clicked.connect(
+                        partial(delete_clicked, row_data)
+                    )
+
                 else :
                     item = QTableWidgetItem(str(value))
                     item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)  # 텍스트 가운데 정렬
