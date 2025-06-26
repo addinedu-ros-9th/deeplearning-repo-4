@@ -246,6 +246,7 @@ class CCTVWidget(QWidget):
                                 center_pos.setX(center_pos.x() - 95)
                                 center_pos.setY(center_pos.y() - 25)
                                 self.video_popup_widget.show_at(center_pos)
+                                self.video_popup_widget.refresh()  # 비디오 팝업 위젯 새로고침
 
                                 # 비디오 수신
                                 video_url = f'http://{CENTRAL_IP}:{CENTRAL_GUI_PORT}/load/video?video_url={tmp_row_data['video_url']}'
