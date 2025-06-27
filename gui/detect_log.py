@@ -10,10 +10,10 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# 사용자 모듈
 from modules.user_info import *
-
+from video_popup import VideoPopupWidget
 from server.config import CENTRAL_IP, CENTRAL_GUI_PORT
-
 from style import apply_style
 
 class HorizontalLineDelegate(QStyledItemDelegate):
@@ -80,6 +80,8 @@ class DetectLogWidget(QWidget):
         self.search_btn.setProperty("class", "btn outlined primary weight700") # 검색 버튼
 
         self.period =  "week"
+
+        self.video_popup_widget = VideoPopupWidget(self)
 
         # human_min 값 변경 시 이벤트 연결
         # self.human_min.valueChanged.connect(self.on_human_min_changed)
@@ -385,11 +387,11 @@ class DetectLogWidget(QWidget):
                         self.detect_table.setCellWidget(row, col, cell_widget)
 
                 elif col == 5: # 클립 보기 버튼 추가
-                    delete_button = QPushButton("")
-                    delete_button.setProperty("class", "btn clip")
+                    clip_button = QPushButton("")
+                    clip_button.setProperty("class", "btn clip")
                      # 삭제 버튼을 가운데 정렬하기 위한 레이아웃 설정
                     layout = QHBoxLayout()
-                    layout.addWidget(delete_button)
+                    layout.addWidget(clip_button)
                     layout.setAlignment(Qt.AlignmentFlag.AlignCenter)  # 가운데 정렬
                     layout.setContentsMargins(0, 0, 0, 0)  # 여백 제거
                     
@@ -398,6 +400,55 @@ class DetectLogWidget(QWidget):
                     cell_widget.setLayout(layout)
                     self.detect_table.setCellWidget(row, col, cell_widget)
                     
+                    def confirm_clicked(tmp_row_data):
+                        url = f"http://{CENTRAL_IP}:{CENTRAL_GUI_PORT}/load/video"
+
+                        req_data = {
+                            "user_id": get_user_id(),
+                            "video_url": tmp_row_data['video_url'],  
+                        }
+
+                        print("클립 req_data:", req_data)
+                        try:
+                            response = requests.get(url, params=req_data)
+                            if response.status_code == 200:
+                                print('비디오 응답 성공')
+                                # 응답 파일 타입 확인
+                                content_type = response.headers.get('Content-Type', '')
+                                print("응답 Content-Type:", content_type)
+                                if 'video' not in content_type:
+                                    print(f"응답이 비디오가 아닙니다: {content_type}")
+                                    return
+                                # 화면 중앙에 팝업 표시
+                                parent_rect = self.rect()
+                                popup_rect = self.video_popup_widget.rect()
+                                center_pos = self.mapToGlobal(parent_rect.center() - popup_rect.center())
+                                center_pos.setX(center_pos.x() - 95)
+                                center_pos.setY(center_pos.y() - 25)
+                                self.video_popup_widget.show_at(center_pos)
+                                self.video_popup_widget.refresh()  # 비디오 팝업 위젯 새로고침
+
+                                # 비디오 수신
+                                video_url = f'http://{CENTRAL_IP}:{CENTRAL_GUI_PORT}/load/video?video_url={tmp_row_data['video_url']}'
+                                print("비디오 URL:", video_url)
+                                self.video_popup_widget.video.setSource(QUrl(video_url))
+                                self.video_popup_widget.video.play()
+
+
+                                print("[비디오 - 응답 내용]:", response)
+                                # self.refresh()  # 테이블 다시 그리기
+                                # return result
+                            else:
+                                print(f"요청 실패: {response.status_code}")
+                                return 
+                        except requests.RequestException as e:
+                            print(f"요청 중 오류 발생: {e}")
+                            return 
+                        
+                    clip_button.clicked.connect(
+                        partial(confirm_clicked, row_data)
+                    )
+                
                     # 삭제 버튼 추가
                     delete_button = QPushButton("")
                     delete_button.setProperty("class", "btn delete")
@@ -411,6 +462,32 @@ class DetectLogWidget(QWidget):
                     cell_widget = QWidget()
                     cell_widget.setLayout(layout)
                     self.detect_table.setCellWidget(row, 6, cell_widget)
+
+                    def delete_clicked(tmp_row_data):
+                        url = f"http://{CENTRAL_IP}:{CENTRAL_GUI_PORT}/delete/video"
+
+                        req_data = {
+                            "user_id": get_user_id(),
+                            "video_url": tmp_row_data['video_url'],
+                        }
+
+                        print("확인 req_data:", req_data)
+                        try:
+                            response = requests.post(url, json=req_data)
+                            if response.status_code == 200:
+                                self.refresh()  # 테이블 다시 그리기
+                                # return result
+                            else:
+                                print(f"요청 실패: {response.status_code}")
+                                return 
+                        except requests.RequestException as e:
+                            print(f"확인 요청 중 오류 발생: {e}")
+                            return
+                        
+                    delete_button.clicked.connect(
+                        partial(delete_clicked, row_data)
+                    )
+
                 else :
                     item = QTableWidgetItem(str(value))
                     item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)  # 텍스트 가운데 정렬
