@@ -164,8 +164,6 @@ class CCTVWidget(QWidget):
             response = requests.post(url, json=req_data)
             if response.status_code == 200:
                 result = response.json()
-                print("[cctv 알림 - 응답 내용]:", result)
-                
                 self.original_data = result
                 self.data = self.original_data.copy()  # 초기 데이터 복사
                 # return result
