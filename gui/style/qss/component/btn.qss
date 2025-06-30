@@ -214,3 +214,14 @@ QPushButton:focus, QPushButton:pressed {
     qproperty-icon: url("./style/images/ico-favorite_active.png");
     qproperty-iconSize: 18px 18px;
 }
+
+.btn.refresh {
+    qproperty-icon: url("./style/images/ico-refresh.png");
+    qproperty-iconSize: 18px 18px;
+    border: 1px solid #999;
+    background-color: white;;
+    border-radius: {{radius}};
+}
+.btn.refresh:hover {
+    background-color: #eee;
+}

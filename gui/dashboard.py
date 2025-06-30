@@ -143,6 +143,33 @@ class DashboardWidget(QWidget):
         self.search_btn.clicked.connect(self.on_search_clicked)
     
     def refresh(self):
+        def get_date(year, month):
+            if month < 10:
+                month1 = f"0{month}"
+            else:
+                month1 = month
+            return f"{year}-{month1}"
+
+        url = f"http://{CENTRAL_IP}:{CENTRAL_GUI_PORT}/load/dashboard"
+
+        req_data = {
+            "user_id": get_user_id(),
+            "date": get_date(self.year1.value(), self.month1.value())
+        }
+
+        print("확인 req_data:", req_data)
+        try:
+            response = requests.post(url, json=req_data)
+            if response.status_code == 200:
+                print('200', response.json())
+                self.data = response.json()
+            else:
+                print(f"요청 실패: {response.status_code}")
+                return 
+        except requests.RequestException as e:
+            print(f"확인 요청 중 오류 발생: {e}")
+            return
+
         self.clear_layout()
         self.draw_graph1()
         self.draw_graph2()

@@ -8,8 +8,8 @@ import numpy as np
 from config import AI_IP, AI_PORT, MAX_PACKET_SIZE
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-# cap = cv2.VideoCapture(2)
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(2)
+# cap = cv2.VideoCapture(0)
 
 # 카메라 설정 - 1920x1080 해상도로 변경
 cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))  # MJPEG 포맷 강제
