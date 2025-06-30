@@ -747,23 +747,20 @@ def realtime_anomaly_detection(model_path, pose_model_path='yolov8n-pose.pt', se
                     
                     # 저장 시작 조건 확인
                     if should_start_saving(pred_buffer, saving, last_saved_action, light_off_frame_count, light_off_min_frames):
-                        # 사람이 감지되지 않았으면 저장하지 않음
-                        if person_count == 0:
-                            pass  # 저장하지 않지만 계속 진행
+                        # Light OFF 상태인지 확인
+                        if light_off_frame_count >= light_off_min_frames:
+                            # Light OFF는 사람이 없어도 저장
+                            detected_action = "light_off"
+                            action_name = "Light_OFF"
+                            last_saved_action = "light_off"
+                            print(f"[DEBUG] Light OFF recording started! Count: {light_off_frame_count}, Brightness: {curr_brightness:.1f}")
+                            # Light OFF 알림
+                            send_notification("Light_OFF", person_count, "1.00")
                         else:
-                            saving = True
-                            save_countdown = SAVE_COUNTDOWN
-                            
-                            # Light OFF 상태인지 확인
-                            if light_off_frame_count >= light_off_min_frames:
-                                detected_action = "light_off"
-                                action_name = "Light_OFF"
-                                last_saved_action = "light_off"
-                                print(f"[DEBUG] Light OFF recording started! Count: {light_off_frame_count}, Brightness: {curr_brightness:.1f}")
-                                # Light OFF 알림
-                                send_notification("Light_OFF", person_count, "1.00")
+                            # AI 예측 기반은 사람이 있어야만 저장
+                            if person_count == 0:
+                                pass  # 사람이 없으면 저장하지 않음
                             else:
-                                # 기존 AI 예측 기반
                                 detected_action = get_consecutive_abnormal_label(pred_buffer)
                                 action_name = LABEL_NAMES[detected_action]
                                 last_saved_action = detected_action
@@ -780,6 +777,11 @@ def realtime_anomaly_detection(model_path, pose_model_path='yolov8n-pose.pt', se
                                     max_confidence = 1.0
                                 confidence_str = f"{max_confidence:.2f}"
                                 send_notification(action_name, person_count, confidence_str)
+                        
+                        # 저장 시작 (Light OFF 또는 AI 예측)
+                        if light_off_frame_count >= light_off_min_frames or (person_count > 0 and detected_action is not None):
+                            saving = True
+                            save_countdown = SAVE_COUNTDOWN
                             
                             dt_str = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
                             
