@@ -37,4 +37,75 @@ def delete_video_file(video_url):
             return None
     except Exception as e:
         print(f"VideoService: Error deleting video {video_url}: {e}")
-        return None 
+        return None
+
+def delete_checked_videos(user_id, video_urls):
+    """선택된 여러 영상들을 삭제합니다."""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        # user_id로 store_name 찾기
+        cursor.execute("SELECT store_name FROM store WHERE user_id = %s", (user_id,))
+        store_row = cursor.fetchone()
+        if not store_row:
+            cursor.close()
+            conn.close()
+            return False
+        
+        store_name = store_row['store_name']
+        deleted_count = 0
+        
+        for video_url in video_urls:
+            # DB에서 삭제 (해당 user의 store_name과 일치하는 경우만)
+            delete_query = "DELETE FROM cctv_data WHERE video_url = %s AND store_name = %s"
+            cursor.execute(delete_query, (video_url, store_name))
+            if cursor.rowcount > 0:
+                deleted_count += 1
+                
+                # 파일 삭제
+                file_path = get_video_path(video_url)
+                if file_path and os.path.exists(file_path):
+                    os.remove(file_path)
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return deleted_count > 0
+    except Exception as e:
+        print(f"VideoService: Error deleting checked videos: {e}")
+        return False
+
+def update_video_favorite(user_id, video_url, favorite):
+    """영상의 즐겨찾기 상태를 업데이트합니다."""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        # user_id로 store_name 찾기
+        cursor.execute("SELECT store_name FROM store WHERE user_id = %s", (user_id,))
+        store_row = cursor.fetchone()
+        if not store_row:
+            cursor.close()
+            conn.close()
+            return False
+        
+        store_name = store_row['store_name']
+        
+        # 즐겨찾기 상태 업데이트 (해당 user의 store_name과 일치하는 경우만)
+        update_query = "UPDATE cctv_data SET favorite = %s WHERE video_url = %s AND store_name = %s"
+        cursor.execute(update_query, (favorite, video_url, store_name))
+        # updated_count = cursor.rowcount
+        conn.commit()
+        # 여기서 rowcount가 0이어도, 실제로 값이 이미 원하는 값이면 성공으로 간주
+        # 즉, row가 존재하는지 한 번 더 체크
+        cursor.execute("SELECT 1 FROM cctv_data WHERE video_url = %s AND store_name = %s", (video_url, store_name))
+        exists = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        
+        return exists is not None
+    except Exception as e:
+        print(f"VideoService: Error updating video favorite: {e}")
+        return False 

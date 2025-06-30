@@ -6,14 +6,14 @@ from PyQt6.QtCore import *
 from PyQt6.QtWidgets import *
 from functools import partial
 import requests
+from datetime import datetime, timedelta
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from modules.user_info import *
-
 from server.config import CENTRAL_IP, CENTRAL_GUI_PORT
-
+from video_popup import VideoPopupWidget
 from style import apply_style
 
 class HorizontalLineDelegate(QStyledItemDelegate):
@@ -39,11 +39,13 @@ class DetectLogWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         loadUi("detect_log.ui", self)
-
+        now = datetime.now()
+        one_week_ago = now - timedelta(days=7)
         # 클래스 변경
         self.toggle_bg.setProperty("class", "radius bg graye")
         self.text1.setProperty("class", "color-black size14 weight700")
         self.text2.setProperty("class", "color-black size14 weight700")
+        self.text3.setProperty("class", "color-black size14 weight700")
         self.toggle1.setProperty("class", "toggle") # 토글 버튼 오늘 
         self.toggle2.setProperty("class", "toggle active") # 토글 버튼 주간
         self.toggle3.setProperty("class", "toggle") # 토글 버튼 월간
@@ -59,6 +61,12 @@ class DetectLogWidget(QWidget):
         self.month2.setProperty("class", "spinbox small") # 월 스핀박스
         self.date1.setProperty("class", "spinbox small") # 일 스핀박스
         self.date2.setProperty("class", "spinbox small") # 일 스핀박
+        self.year1.setValue(one_week_ago.year)
+        self.month1.setValue(one_week_ago.month)
+        self.date1.setValue(one_week_ago.day)
+        self.year2.setValue(now.year)
+        self.month2.setValue(now.month)
+        self.date2.setValue(now.day)
         self.filter_bg.setProperty("class", "radius bg grayf5") # 토글 버튼 월간
         self.checkbox1.setProperty("class", "checkbox") # 파손 체크박스
         self.checkbox2.setProperty("class", "checkbox") # 유기 체크박스
@@ -75,11 +83,17 @@ class DetectLogWidget(QWidget):
         self.radio1.setProperty("class", "radiobox") # 전체
         self.radio2.setProperty("class", "radiobox") # 확인 완료
         self.radio3.setProperty("class", "radiobox") # 미확인
+        self.radio4.setProperty("class", "radiobox") # 전체
+        self.radio5.setProperty("class", "radiobox") # 즐겨찾기
+        self.radio6.setProperty("class", "radiobox") # 미즐겨찾기
         self.radio1.setChecked(True) 
+        self.radio4.setChecked(True)
         self.detect_table.setProperty("class", "table") 
         self.search_btn.setProperty("class", "btn outlined primary weight700") # 검색 버튼
 
         self.period =  "week"
+
+        self.video_popup_widget = VideoPopupWidget(self)
 
         # human_min 값 변경 시 이벤트 연결
         # self.human_min.valueChanged.connect(self.on_human_min_changed)
@@ -93,7 +107,7 @@ class DetectLogWidget(QWidget):
         self.detect_table.setItemDelegate(delegate)
 
         # 열 헤더 설정
-        column = ["매장 명", "기록 시점", "불법행위 종류", "사람 수", "확인 여부", "녹화 클립", "삭제"]
+        column = ["선택", "즐겨찾기", "매장 명", "기록 시점", "불법행위 종류", "사람 수", "확인 여부", "녹화 클립", "삭제"]
         # 데이터 추가
         self.data = [
             {
@@ -102,7 +116,8 @@ class DetectLogWidget(QWidget):
                 "event_type": "broken",
                 "person_count": str(2),
                 "is_checked": 0,
-                "video_url": "video_34.mp4"
+                "video_url": "video_34.mp4",
+                "favorite": 0
             }
         ]
         # 행 번호 숨기기
@@ -113,15 +128,15 @@ class DetectLogWidget(QWidget):
         self.detect_table.setHorizontalHeaderLabels(column)
 
         # 열 너비 설정
-        column_widths = [194, 194, 194, 194, 200, 140, 100]
+        column_widths = [50, 50, 144, 144, 194, 70, 200, 140, 100]
         for i, width in enumerate(column_widths):
             self.detect_table.setColumnWidth(i, width)
         
         # 특정 열을 화면 크기에 맞게 늘어나도록 설정
-        self.detect_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)  # 첫 번째 열
-        self.detect_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)  # 두 번째 열
-        self.detect_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)  # 세 번째 열
-        self.detect_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)  # 네 번째 열
+        self.detect_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)  
+        self.detect_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)  
+        self.detect_table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeMode.Stretch)  
+        # self.detect_table.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeMode.Stretch)  
 
         # 오늘 / 주간 / 월간 토글 버튼 클릭 이벤트 연결
         self.toggle1.clicked.connect(self.click_toggle1)
@@ -169,6 +184,15 @@ class DetectLogWidget(QWidget):
             elif self.radio3.isChecked():
                 return [0]
             return None
+        
+        def get_is_favorite():
+            if self.radio4.isChecked():
+                return [0, 1]  # 전체
+            elif self.radio5.isChecked():
+                return [1]  # 확인 완료
+            elif self.radio6.isChecked():
+                return [0]
+            return None
 
         req_data = {
             "user_id": get_user_id(),
@@ -181,7 +205,8 @@ class DetectLogWidget(QWidget):
                 "theft" if self.checkbox3.isChecked() else '',
                 "light_off" if self.checkbox4.isChecked() else ''
             ],
-            "is_checked": get_is_checked()
+            "is_checked": get_is_checked(),
+            "favorite": get_is_favorite(),
         }
         # None 값 제거
         req_data["event_type"] = [e for e in req_data["event_type"] if e is not None]
@@ -230,7 +255,7 @@ class DetectLogWidget(QWidget):
                         # 셀에 레이아웃 설정
                         cell_widget = QWidget()
                         cell_widget.setLayout(layout)
-                        self.detect_table.setCellWidget(row, col, cell_widget)
+                        self.detect_table.setCellWidget(row, col + 2, cell_widget)
 
                     else:
                         combo_box = QComboBox()
@@ -321,7 +346,7 @@ class DetectLogWidget(QWidget):
                         # 셀에 레이아웃 설정
                         cell_widget = QWidget()
                         cell_widget.setLayout(layout)
-                        self.detect_table.setCellWidget(row, col, cell_widget)
+                        self.detect_table.setCellWidget(row, col + 2, cell_widget)
 
                 elif col == 4:  # 확인 여부 열
                     if value == 1 :
@@ -337,7 +362,7 @@ class DetectLogWidget(QWidget):
                         # 셀에 레이아웃 설정
                         cell_widget = QWidget()
                         cell_widget.setLayout(layout)
-                        self.detect_table.setCellWidget(row, col, cell_widget)
+                        self.detect_table.setCellWidget(row, col + 2, cell_widget)
                     else:
                         confirm_label = QLabel("미확인")
                         confirm_label.setProperty("class", "label unconfirm")
@@ -382,22 +407,71 @@ class DetectLogWidget(QWidget):
                         # 셀에 레이아웃 설정
                         cell_widget = QWidget()
                         cell_widget.setLayout(layout)
-                        self.detect_table.setCellWidget(row, col, cell_widget)
+                        self.detect_table.setCellWidget(row, col + 2, cell_widget)
 
                 elif col == 5: # 클립 보기 버튼 추가
-                    delete_button = QPushButton("")
-                    delete_button.setProperty("class", "btn clip")
+                    clip_button = QPushButton("")
+                    clip_button.setProperty("class", "btn clip")
                      # 삭제 버튼을 가운데 정렬하기 위한 레이아웃 설정
                     layout = QHBoxLayout()
-                    layout.addWidget(delete_button)
+                    layout.addWidget(clip_button)
                     layout.setAlignment(Qt.AlignmentFlag.AlignCenter)  # 가운데 정렬
                     layout.setContentsMargins(0, 0, 0, 0)  # 여백 제거
                     
                     # 셀에 레이아웃 설정
                     cell_widget = QWidget()
                     cell_widget.setLayout(layout)
-                    self.detect_table.setCellWidget(row, col, cell_widget)
+                    self.detect_table.setCellWidget(row, col + 2, cell_widget)
                     
+                    def confirm_clicked(tmp_row_data):
+                        url = f"http://{CENTRAL_IP}:{CENTRAL_GUI_PORT}/load/video"
+
+                        req_data = {
+                            "user_id": get_user_id(),
+                            "video_url": tmp_row_data['video_url'],  
+                        }
+
+                        print("클립 req_data:", req_data)
+                        try:
+                            response = requests.get(url, params=req_data)
+                            if response.status_code == 200:
+                                print('비디오 응답 성공')
+                                # 응답 파일 타입 확인
+                                content_type = response.headers.get('Content-Type', '')
+                                print("응답 Content-Type:", content_type)
+                                if 'video' not in content_type:
+                                    print(f"응답이 비디오가 아닙니다: {content_type}")
+                                    return
+                                # 화면 중앙에 팝업 표시
+                                parent_rect = self.rect()
+                                popup_rect = self.video_popup_widget.rect()
+                                center_pos = self.mapToGlobal(parent_rect.center() - popup_rect.center())
+                                center_pos.setX(center_pos.x() - 95)
+                                center_pos.setY(center_pos.y() - 25)
+                                self.video_popup_widget.show_at(center_pos)
+                                self.video_popup_widget.refresh()  # 비디오 팝업 위젯 새로고침
+
+                                # 비디오 수신
+                                video_url = f'http://{CENTRAL_IP}:{CENTRAL_GUI_PORT}/load/video?video_url={tmp_row_data['video_url']}'
+                                print("비디오 URL:", video_url)
+                                self.video_popup_widget.video.setSource(QUrl(video_url))
+                                self.video_popup_widget.video.play()
+
+
+                                print("[비디오 - 응답 내용]:", response)
+                                # self.refresh()  # 테이블 다시 그리기
+                                # return result
+                            else:
+                                print(f"요청 실패: {response.status_code}")
+                                return 
+                        except requests.RequestException as e:
+                            print(f"요청 중 오류 발생: {e}")
+                            return 
+                        
+                    clip_button.clicked.connect(
+                        partial(confirm_clicked, row_data)
+                    )
+                
                     # 삭제 버튼 추가
                     delete_button = QPushButton("")
                     delete_button.setProperty("class", "btn delete")
@@ -410,11 +484,78 @@ class DetectLogWidget(QWidget):
                     # 셀에 레이아웃 설정
                     cell_widget = QWidget()
                     cell_widget.setLayout(layout)
-                    self.detect_table.setCellWidget(row, 6, cell_widget)
+                    self.detect_table.setCellWidget(row, 8, cell_widget)
+
+                    def delete_clicked(tmp_row_data):
+                        url = f"http://{CENTRAL_IP}:{CENTRAL_GUI_PORT}/delete/video"
+
+                        req_data = {
+                            "user_id": get_user_id(),
+                            "video_url": tmp_row_data['video_url'],
+                        }
+
+                        print("확인 req_data:", req_data)
+                        try:
+                            response = requests.post(url, json=req_data)
+                            if response.status_code == 200:
+                                self.refresh()  # 테이블 다시 그리기
+                                # return result
+                            else:
+                                print(f"요청 실패: {response.status_code}")
+                                return 
+                        except requests.RequestException as e:
+                            print(f"확인 요청 중 오류 발생: {e}")
+                            return
+                        
+                    delete_button.clicked.connect(
+                        partial(delete_clicked, row_data)
+                    )
+                elif col == 6: # 즐겨찾기 열
+                    favorite_button = QPushButton("")
+                    if row_data['favorite'] == 1:
+                        favorite_button.setProperty("class", "btn favorite active")
+                    else:
+                        favorite_button.setProperty("class", "btn favorite")
+                     # 삭제 버튼을 가운데 정렬하기 위한 레이아웃 설정
+                    layout = QHBoxLayout()
+                    layout.addWidget(favorite_button)
+                    layout.setAlignment(Qt.AlignmentFlag.AlignCenter)  # 가운데 정렬
+                    layout.setContentsMargins(0, 0, 0, 0)  # 여백 제거
+                    
+                    # 셀에 레이아웃 설정
+                    cell_widget = QWidget()
+                    cell_widget.setLayout(layout)
+                    self.detect_table.setCellWidget(row, 1, cell_widget)
+
+                    def favorite_clicked(tmp_row_data):
+                        url = f"http://{CENTRAL_IP}:{CENTRAL_GUI_PORT}/favorite/video"
+
+                        req_data = {
+                            "user_id": get_user_id(),
+                            "video_url": tmp_row_data['video_url'],
+                            "favorite": 1 if tmp_row_data['favorite'] == 0 else 0,  # 현재 즐겨찾기 상태 반전
+                        }
+
+                        print("확인 req_data:", req_data)
+                        try:
+                            response = requests.post(url, json=req_data)
+                            if response.status_code == 200:
+                                self.refresh()  # 테이블 다시 그리기
+                                # return result
+                            else:
+                                print(f"요청 실패: {response.status_code}")
+                                return 
+                        except requests.RequestException as e:
+                            print(f"확인 요청 중 오류 발생: {e}")
+                            return
+                        
+                    favorite_button.clicked.connect(
+                        partial(favorite_clicked, row_data)
+                    )
                 else :
                     item = QTableWidgetItem(str(value))
                     item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)  # 텍스트 가운데 정렬
-                    self.detect_table.setItem(row, col, item)
+                    self.detect_table.setItem(row, col + 2, item)
 
     def click_toggle1(self): # 오늘 클릭
         self.toggle1.setProperty("class", "toggle active")
