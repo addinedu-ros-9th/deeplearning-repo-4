@@ -279,10 +279,10 @@ class DetectLogWidget(QWidget):
                 def change_select_list(tmp_row_data):
                     if tmp_row_data['video_url'] in self.select_list:
                         self.select_list.remove(tmp_row_data['video_url'])
-                        row_checkbox.setChecked(False)
+                        # row_checkbox.setChecked(False)
                     else:
                         self.select_list.append(tmp_row_data['video_url'])
-                        row_checkbox.setChecked(True)
+                        # row_checkbox.setChecked(True)
 
                 row_checkbox.clicked.connect(
                     partial(change_select_list, row_data)
