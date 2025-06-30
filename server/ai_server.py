@@ -694,6 +694,11 @@ def realtime_anomaly_detection(model_path, pose_model_path='yolov8n-pose.pt', se
                                 (20, 340), cv2.FONT_HERSHEY_SIMPLEX, 0.6,
                                 (255, 255, 255), 2)
                     
+                    # Light OFF 상태 디버깅용 표시 추가
+                    cv2.putText(frame, f"Light Status: {light_off_status}", 
+                                (20, 370), cv2.FONT_HERSHEY_SIMPLEX, 0.6,
+                                (255, 255, 255), 2)
+                    
                     # 클립 저장 중이면 최대 사람 수 업데이트
                     if saving and person_count > current_clip_max_persons:
                         current_clip_max_persons = person_count
