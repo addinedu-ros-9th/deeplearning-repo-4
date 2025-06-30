@@ -235,9 +235,9 @@
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>198</y>
+     <y>226</y>
      <width>1210</width>
-     <height>634</height>
+     <height>606</height>
     </rect>
    </property>
    <property name="font">
@@ -728,6 +728,95 @@
     <number>10</number>
    </property>
   </widget>
+  <widget class="QPushButton" name="delete_btn">
+   <property name="geometry">
+    <rect>
+     <x>1160</x>
+     <y>188</y>
+     <width>70</width>
+     <height>28</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Inter 18pt</family>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>삭제</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="text4_1">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>188</y>
+     <width>21</width>
+     <height>28</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Inter 18pt</family>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>총</string>
+   </property>
+   <property name="margin">
+    <number>0</number>
+   </property>
+  </widget>
+  <widget class="QLabel" name="text4_2">
+   <property name="geometry">
+    <rect>
+     <x>40</x>
+     <y>188</y>
+     <width>21</width>
+     <height>28</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Inter 18pt</family>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>총</string>
+   </property>
+   <property name="margin">
+    <number>0</number>
+   </property>
+  </widget>
+  <widget class="QLabel" name="text4_3">
+   <property name="geometry">
+    <rect>
+     <x>80</x>
+     <y>188</y>
+     <width>21</width>
+     <height>28</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Inter 18pt</family>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>개</string>
+   </property>
+   <property name="margin">
+    <number>0</number>
+   </property>
+  </widget>
   <zorder>filter_bg</zorder>
   <zorder>toggle_bg</zorder>
   <zorder>text1</zorder>
@@ -757,6 +846,10 @@
   <zorder>groupBox</zorder>
   <zorder>groupBox2</zorder>
   <zorder>text3</zorder>
+  <zorder>delete_btn</zorder>
+  <zorder>text4_1</zorder>
+  <zorder>text4_2</zorder>
+  <zorder>text4_3</zorder>
  </widget>
  <resources/>
  <connections/>

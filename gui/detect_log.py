@@ -1,4 +1,6 @@
+from ast import Pass
 import sys, os
+from tabnanny import check
 from PyQt6.uic import loadUi
 from PyQt6 import *
 from PyQt6.QtGui import *
@@ -46,6 +48,9 @@ class DetectLogWidget(QWidget):
         self.text1.setProperty("class", "color-black size14 weight700")
         self.text2.setProperty("class", "color-black size14 weight700")
         self.text3.setProperty("class", "color-black size14 weight700")
+        self.text4_1.setProperty("class", "color-black size14 weight700")
+        self.text4_2.setProperty("class", "color-primary size14 weight700")
+        self.text4_3.setProperty("class", "color-black size14 weight700")
         self.toggle1.setProperty("class", "toggle") # 토글 버튼 오늘 
         self.toggle2.setProperty("class", "toggle active") # 토글 버튼 주간
         self.toggle3.setProperty("class", "toggle") # 토글 버튼 월간
@@ -90,11 +95,12 @@ class DetectLogWidget(QWidget):
         self.radio4.setChecked(True)
         self.detect_table.setProperty("class", "table") 
         self.search_btn.setProperty("class", "btn outlined primary weight700") # 검색 버튼
+        self.delete_btn.setProperty("class", "btn outlined gray6 weight700") # 삭제 버튼
 
         self.period =  "week"
 
         self.video_popup_widget = VideoPopupWidget(self)
-
+    
         # human_min 값 변경 시 이벤트 연결
         # self.human_min.valueChanged.connect(self.on_human_min_changed)
         # self.human_max.valueChanged.connect(self.on_human_max_changed)
@@ -105,6 +111,8 @@ class DetectLogWidget(QWidget):
         # 수평선만 있는 델리게이트 적용
         delegate = HorizontalLineDelegate()
         self.detect_table.setItemDelegate(delegate)
+        
+        self.select_list = []
 
         # 열 헤더 설정
         column = ["선택", "즐겨찾기", "매장 명", "기록 시점", "불법행위 종류", "사람 수", "확인 여부", "녹화 클립", "삭제"]
@@ -149,6 +157,7 @@ class DetectLogWidget(QWidget):
         self.date1.valueChanged.connect(self.change_date)
         self.date2.valueChanged.connect(self.change_date)
         self.search_btn.clicked.connect(self.refresh)
+        self.delete_btn.clicked.connect(self.select_delete)
 
         self.refresh()
 
@@ -157,6 +166,30 @@ class DetectLogWidget(QWidget):
         # self.title.setText(get_user_info()['store_name'])
         self.get_table_data()
         self.drawTable()
+    
+    def select_delete(self):
+        url = f"http://{CENTRAL_IP}:{CENTRAL_GUI_PORT}/delete/checked_video"
+
+        req_data = {
+            "user_id": get_user_id(),
+            "video_urls": self.select_list,
+        }
+
+        print("변경 req_data:", req_data)
+        try:
+            response = requests.post(url, json=req_data)
+            if response.status_code == 200:
+                result = response.json()
+                print("[변경 - 응답 내용]:", result)
+                self.refresh()  # 테이블 다시 그리기
+                # return result
+            else:
+                print(f"요청 실패: {response.status_code}")
+                return 
+        except requests.RequestException as e:
+            print(f"요청 중 오류 발생: {e}")
+            return 
+        
 
     def get_table_data(self):
         url = f"http://{CENTRAL_IP}:{CENTRAL_GUI_PORT}/load/detect_log/filter"
@@ -210,12 +243,12 @@ class DetectLogWidget(QWidget):
         }
         # None 값 제거
         req_data["event_type"] = [e for e in req_data["event_type"] if e is not None]
-        print("req_data:", req_data)
+        # print("req_data:", req_data)
         try:
             response = requests.post(url, json=req_data)
             if response.status_code == 200:
                 result = response.json()
-                print("[cctv 알림 - 응답 내용]:", result)
+                # print("[cctv 알림 - 응답 내용]:", result)
                 self.data = result
                 # return result
             else:
@@ -227,8 +260,34 @@ class DetectLogWidget(QWidget):
         
     def drawTable(self):
         self.detect_table.setRowCount(len(self.data))  # 데이터 행 개수만큼 설정
+        self.text4_2.setText(str(len(self.data)))  # 데이터 개수 표시
         for row, row_data in enumerate(self.data):
             for col, value in enumerate(row_data.values()):
+                row_checkbox = QCheckBox()
+                row_checkbox.setProperty("class", "checkbox")
+
+                layout = QHBoxLayout()
+                layout.addWidget(row_checkbox)
+                layout.setAlignment(Qt.AlignmentFlag.AlignCenter)  # 가운데 정렬
+                layout.setContentsMargins(0, 0, 0, 0)  # 여백 제거
+                
+                # 셀에 레이아웃 설정
+                cell_widget = QWidget()
+                cell_widget.setLayout(layout)
+                self.detect_table.setCellWidget(row, 0, cell_widget)
+
+                def change_select_list(tmp_row_data):
+                    if tmp_row_data['video_url'] in self.select_list:
+                        self.select_list.remove(tmp_row_data['video_url'])
+                        row_checkbox.setChecked(False)
+                    else:
+                        self.select_list.append(tmp_row_data['video_url'])
+                        row_checkbox.setChecked(True)
+
+                row_checkbox.clicked.connect(
+                    partial(change_select_list, row_data)
+                )
+
                 if col == 2: # 불법행위 comboBox 종류 열
                     if row_data['is_checked'] == 1:
                         behavior_label = QLabel(value)

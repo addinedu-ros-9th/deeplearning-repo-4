@@ -25,6 +25,14 @@ QPushButton:focus, QPushButton:pressed {
     background-color: rgba(3, 180, 200, 0.1);
 }
 
+.btn.outlined.gray6 {
+    color: #666;
+    border: 1px solid #666;
+}
+.btn.outlined.gray6:hover {
+    background-color: rgba(0,0,0, 0.1);
+}
+
 .btn.contained {
     color: white;
     border: none;
