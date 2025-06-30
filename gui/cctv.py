@@ -40,6 +40,8 @@ class CCTVWidget(QWidget):
         self.title.setText("GS25 금천점")
         self.comboBox.setStyleSheet("")
         self.detect_table.setProperty("class", "table small")
+        self.refresh_btn.setProperty("class", "btn refresh")
+        self.refresh_btn.clicked.connect(self.refresh)
 
         self.video_popup_widget = VideoPopupWidget(self)
         
@@ -476,7 +478,7 @@ class CCTVWidget(QWidget):
                 message = f"이상 행위가 감지되었습니다.\n사람 수: {person_count}명\n신뢰도: {confidence}"
             
             print(f"[GUI] AI 서버 알림 수신: {title} - {message}")
-            self.refresh()  # 알림 수신 후 데이터 새로고침
+            # self.refresh()  # 알림 수신 후 데이터 새로고침
 
             # 시스템 알림 전송
             try:
