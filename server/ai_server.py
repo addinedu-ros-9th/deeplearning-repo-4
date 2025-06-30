@@ -676,6 +676,10 @@ def realtime_anomaly_detection(model_path, pose_model_path='yolov8n-pose.pt', se
                     if light_off_frame_count >= light_off_min_frames:
                         display_light_status = light_off_status
                         display_color = (0, 0, 255)
+                    elif "Light OFF" in light_off_status:
+                        # Light OFF가 감지되었지만 아직 5프레임 미만일 때
+                        display_light_status = light_off_status
+                        display_color = (0, 165, 255)  # 주황색 (경고)
                     else:
                         display_light_status = "Normal"
                         display_color = (0, 255, 0)
