@@ -76,14 +76,14 @@ class CCTVWidget(QWidget):
         # detect table 설정
         # 열 헤더 설정
         column = ["기록 시점", "불법행위 종류", "녹화 클립"]
-        self.original_data = [
+        
+        self.data = [
             {
                 "time": "",
                 "event_type": "",
                 "video_url": ""
             },
         ]
-        self.data = self.original_data.copy()
 
         self.comboBox.currentIndexChanged.connect(self.dataChange)
 
@@ -167,8 +167,7 @@ class CCTVWidget(QWidget):
                 result = response.json()
                 print("[cctv 알림 - 응답 내용]:", result)
                 
-                self.original_data = result
-                self.data = self.original_data.copy()  # 초기 데이터 복사
+                self.data = result  # 초기 데이터 복사
                 # return result
             else:
                 print(f"요청 실패: {response.status_code}")
@@ -178,20 +177,21 @@ class CCTVWidget(QWidget):
             return {}
 
     def dataChange(self):
+        data = []
         if self.comboBox.currentText() == "전체":
-            self.data = self.original_data
+            data = self.data
         elif self.comboBox.currentText() == "파손":
-            self.data = [row for row in self.original_data if row.get("event_type") == "broken"]
+            data = [row for row in self.data if row.get("event_type") == "broken"]
         elif self.comboBox.currentText() == "유기":
-            self.data = [row for row in self.original_data if row.get("event_type") == "abandon"]
+            data = [row for row in self.data if row.get("event_type") == "abandon"]
         elif self.comboBox.currentText() == "절도":
-            self.data = [row for row in self.original_data if row.get("event_type") == "theft"]
+            data = [row for row in self.data if row.get("event_type") == "theft"]
         elif self.comboBox.currentText() == "전등 끔":
-            self.data = [row for row in self.original_data if row.get("event_type") == "light_off"]
+            data = [row for row in self.data if row.get("event_type") == "light_off"]
 
-        self.detect_table.setRowCount(len(self.data))  # 필터링된 데이터 행 개수만큼 설정
-        print('self.data: ', self.data)
-        for row, row_data in enumerate(self.data):
+        self.detect_table.setRowCount(len(data))  # 필터링된 데이터 행 개수만큼 설정
+        print('data: ', data)
+        for row, row_data in enumerate(data):
             for col, value in enumerate(row_data.values()):
                 if col == 1:  # 불법행위 comboBox 종류 열
                     behavior_label = QLabel(value)
@@ -477,7 +477,7 @@ class CCTVWidget(QWidget):
             
             print(f"[GUI] AI 서버 알림 수신: {title} - {message}")
             self.refresh()  # 알림 수신 후 데이터 새로고침
-            
+
             # 시스템 알림 전송
             try:
                 subprocess.run([
