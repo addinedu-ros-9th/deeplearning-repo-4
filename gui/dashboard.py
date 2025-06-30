@@ -5,19 +5,13 @@ from PyQt6.QtGui import *
 from PyQt6.QtCore import *
 from PyQt6.QtWidgets import *
 import numpy as np
+
 from matplotlib.figure import Figure  # Figure 임포트
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas 
 import koreanize_matplotlib
-import requests
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from modules.user_info import *
-from server.config import CENTRAL_IP, CENTRAL_GUI_PORT
 
 from style import apply_style
 from style import colors as c
-from datetime import datetime
 
 class DashboardWidget(QWidget):
     def __init__(self, parent=None):
@@ -28,9 +22,6 @@ class DashboardWidget(QWidget):
         self.text2.setText(f"전체 통계")
         self.year1.setProperty("class", "spinbox small")
         self.month1.setProperty("class", "spinbox small")
-        now = datetime.now()
-        self.year1.setValue(now.year)
-        self.month1.setValue(now.month)
         self.text_year.setProperty("class", "color-gray6 size12 weight300")
         self.text_month.setProperty("class", "color-gray6 size12 weight300")
         self.divider1.setProperty("class", "bg grayc")
@@ -44,90 +35,12 @@ class DashboardWidget(QWidget):
 
         self.labels = ["파손", "유기", "절도", "전등 끔"]
         self.colors = [c["primary"], c["secondary"], c["therity"], c["fourth"]]
-        self.data = {
-            'event_types': ['broken', 'abandon', 'theft', 'light_off'],
-            'monthly_stats': [
-            {
-                'count': [0, 0, 0, 0],
-                'month': '2025-01',
-                'ratio': [0, 0, 0, 0],
-                'time_distribution': {
-                '00-02': [0, 0, 0, 0], '02-04': [0, 0, 0, 0],
-                '04-06': [0, 0, 0, 0], '06-08': [0, 0, 0, 0],
-                '08-10': [0, 0, 0, 0], '10-12': [0, 0, 0, 0],
-                '12-14': [0, 0, 0, 0], '14-16': [0, 0, 0, 0],
-                '16-18': [0, 0, 0, 0], '18-20': [0, 0, 0, 0],
-                '20-22': [0, 0, 0, 0], '22-24': [0, 0, 0, 0]
-                }
-            },
-            {
-                'count': [0, 0, 0, 0],
-                'month': '2025-02',
-                'ratio': [0, 0, 0, 0],
-                'time_distribution': {
-                '00-02': [0, 0, 0, 0], '02-04': [0, 0, 0, 0],
-                '04-06': [0, 0, 0, 0], '06-08': [0, 0, 0, 0],
-                '08-10': [0, 0, 0, 0], '10-12': [0, 0, 0, 0],
-                '12-14': [0, 0, 0, 0], '14-16': [0, 0, 0, 0],
-                '16-18': [0, 0, 0, 0], '18-20': [0, 0, 0, 0],
-                '20-22': [0, 0, 0, 0], '22-24': [0, 0, 0, 0]
-                }
-            },
-            {
-                'count': [0, 0, 0, 0],
-                'month': '2025-03',
-                'ratio': [0, 0, 0, 0],
-                'time_distribution': {
-                '00-02': [0, 0, 0, 0], '02-04': [0, 0, 0, 0],
-                '04-06': [0, 0, 0, 0], '06-08': [0, 0, 0, 0],
-                '08-10': [0, 0, 0, 0], '10-12': [0, 0, 0, 0],
-                '12-14': [0, 0, 0, 0], '14-16': [0, 0, 0, 0],
-                '16-18': [0, 0, 0, 0], '18-20': [0, 0, 0, 0],
-                '20-22': [0, 0, 0, 0], '22-24': [0, 0, 0, 0]
-                }
-            },
-            {
-                'count': [0, 0, 0, 0],
-                'month': '2025-04',
-                'ratio': [0, 0, 0, 0],
-                'time_distribution': {
-                '00-02': [0, 0, 0, 0], '02-04': [0, 0, 0, 0],
-                '04-06': [0, 0, 0, 0], '06-08': [0, 0, 0, 0],
-                '08-10': [0, 0, 0, 0], '10-12': [0, 0, 0, 0],
-                '12-14': [0, 0, 0, 0], '14-16': [0, 0, 0, 0],
-                '16-18': [0, 0, 0, 0], '18-20': [0, 0, 0, 0],
-                '20-22': [0, 0, 0, 0], '22-24': [0, 0, 0, 0]
-                }
-            },
-            {
-                'count': [0, 0, 0, 0],
-                'month': '2025-05',
-                'ratio': [0, 0, 0, 0],
-                'time_distribution': {
-                '00-02': [0, 0, 0, 0], '02-04': [0, 0, 0, 0],
-                '04-06': [0, 0, 0, 0], '06-08': [0, 0, 0, 0],
-                '08-10': [0, 0, 0, 0], '10-12': [0, 0, 0, 0],
-                '12-14': [0, 0, 0, 0], '14-16': [0, 0, 0, 0],
-                '16-18': [0, 0, 0, 0], '18-20': [0, 0, 0, 0],
-                '20-22': [0, 0, 0, 0], '22-24': [0, 0, 0, 0]
-                }
-            },
-            {
-                'count': [66, 15, 598, 9],
-                'month': '2025-06',
-                'ratio': [10, 2, 87, 1],
-                'time_distribution': {
-                '00-02': [0, 0, 0, 0], '02-04': [0, 0, 0, 1],
-                '04-06': [0, 0, 0, 0], '06-08': [0, 0, 0, 0],
-                '08-10': [3, 0, 0, 0], '10-12': [1, 2, 2, 1],
-                '12-14': [2, 1, 43, 3], '14-16': [33, 4, 350, 4],
-                '16-18': [27, 6, 197, 0], '18-20': [0, 1, 6, 0],
-                '20-22': [0, 0, 0, 0], '22-24': [0, 1, 0, 0]
-                }
-            }
-            ],
-            'user_id': 'user01'
-        }
+        self.data = np.array([
+            [45, 40, 43, 47, 44, 46, 48, 32, 41, 56, 17, 65],  # 파손
+            [38, 37, 39, 38, 37, 39, 40, 32, 15, 32, 61, 32],  # 유기
+            [22, 25, 23, 24, 22, 23, 24, 12, 15, 21, 31, 21],  # 절도
+            [18, 15, 14, 13, 16, 15, 14, 22, 15, 17, 12, 15],  # 전등 끔
+        ])
         self.graph1_widget = QVBoxLayout(self.graph1)
         self.graph2_widget = QVBoxLayout(self.graph2)
         self.graph3_widget = QVBoxLayout(self.graph3)
@@ -142,57 +55,6 @@ class DashboardWidget(QWidget):
 
         self.search_btn.clicked.connect(self.on_search_clicked)
     
-    def refresh(self):
-        self.clear_layout()
-        self.draw_graph1()
-        self.draw_graph2()
-        self.draw_graph3() 
-        self.draw_legend()
-
-    def on_search_clicked(self):
-        def search_clicked(tmp_row_data):
-            def get_date(year, month):
-                if month < 10:
-                    month1 = f"0{month}"
-                else:
-                    month1 = month
-                return f"{year}-{month1}"
-
-            url = f"http://{CENTRAL_IP}:{CENTRAL_GUI_PORT}/load/dashboard"
-
-            req_data = {
-                "user_id": get_user_id(),
-                "date": get_date(self.year1.value(), self.month1.value())
-            }
-
-            print("확인 req_data:", req_data)
-            try:
-                response = requests.post(url, json=req_data)
-                if response.status_code == 200:
-                    print('200', response.json())
-                    self.data = response.json()
-                else:
-                    print(f"요청 실패: {response.status_code}")
-                    return 
-            except requests.RequestException as e:
-                print(f"확인 요청 중 오류 발생: {e}")
-                return
-            
-        self.search_btn.clicked.connect(search_clicked)
-
-        # self.data = np.array([
-        #     [38, 37, 39, 38, 37, 39, 40, 32, 15, 32, 61, 32],  # 유기
-        #     [22, 25, 23, 24, 22, 23, 24, 12, 15, 21, 31, 21],  # 절도
-        #     [45, 40, 43, 47, 44, 46, 48, 32, 41, 56, 17, 65],  # 파손
-        #     [18, 15, 14, 13, 16, 15, 14, 22, 15, 17, 12, 15],  # 전등 끔
-        # ])
-        self.text1.setText(f"{self.year1.value()}년 {self.month1.value()}월 통계")
-        self.clear_layout()
-        self.draw_graph1()
-        self.draw_graph2()
-        self.draw_graph3() 
-        self.draw_legend()
-
     def clear_layout(self):
         while self.graph1_widget.count():
             item1 = self.graph1_widget.takeAt(0)
@@ -221,42 +83,46 @@ class DashboardWidget(QWidget):
             if widget3 is not None:
                 widget3.setParent(None)
 
+    def on_search_clicked(self):
+        self.data = np.array([
+            [38, 37, 39, 38, 37, 39, 40, 32, 15, 32, 61, 32],  # 유기
+            [22, 25, 23, 24, 22, 23, 24, 12, 15, 21, 31, 21],  # 절도
+            [45, 40, 43, 47, 44, 46, 48, 32, 41, 56, 17, 65],  # 파손
+            [18, 15, 14, 13, 16, 15, 14, 22, 15, 17, 12, 15],  # 전등 끔
+        ])
+        self.text1.setText(f"{self.year1.value()}년 {self.month1.value()}월 통계")
+        self.clear_layout()
+        self.draw_graph1()
+        self.draw_graph2()
+        self.draw_graph3() 
+        self.draw_legend()
+
+
     def draw_graph1(self):
         i = self.month1.value() - 1
-        print('self.data:', self.data)
-        graph1_data = [self.data['monthly_stats'][i]['count'][0], 
-                       self.data['monthly_stats'][i]['count'][1], 
-                       self.data['monthly_stats'][i]['count'][2], 
-                       self.data['monthly_stats'][i]['count'][3]]
+        graph1_data = [self.data[0][i], self.data[1][i], self.data[2][i], self.data[3][i]]
         
         self.canvas = FigureCanvas(Figure(figsize=(3, 3)))
         self.graph1_widget.addWidget(self.canvas)
+        
         self.ax1 = self.canvas.figure.add_subplot(111)
         self.ax1.set_position([0, 0, 1, 1])
-
-        if sum(graph1_data) == 0 or np.any(np.isnan(graph1_data)):
-            self.ax1.text(0.5, 0.5, "데이터 없음", ha='center', va='center', fontsize=14)
-            self.ax1.set_xticks([])
-            self.ax1.set_yticks([])
-        else:
-            self.ax1.pie(
-                graph1_data,
-                labels=None,
-                colors=self.colors,
-                startangle=90,
-                wedgeprops=dict(width=0.3)
-            )
-            self.ax1.set_aspect('equal')
+        self.ax1.pie(
+            graph1_data,
+            labels=None,
+            colors=self.colors,
+            startangle=90,
+            wedgeprops=dict(width=0.3)  # 가운데 구멍 크기 설정
+        )
+        self.ax1.set_aspect('equal')
 
     def draw_graph2(self):
-        i = self.month1.value() - 1
-        '''time_distribution'''
-        time_keys = list(self.data['monthly_stats'][0]['time_distribution'].keys())
-        graph2_data = self.data['monthly_stats'][i]['time_distribution'].values()
-        graph2_data = np.array(list(graph2_data)).T
-
-        print("graph2_data:", graph2_data)
-        print("graph2_data shape:", np.array(graph2_data).shape)
+        graph2_data = np.array([
+            [12, 15, 14, 13, 16, 15, 22, 13, 12, 11, 10, 25],  # 파손
+            [10, 12, 13, 11, 10, 12, 14, 11, 10, 9, 8, 13],    # 유기
+            [8, 7, 9, 8, 7, 9, 10, 8, 7, 6, 5, 9],             # 절도
+            [6, 5, 4, 5, 6, 5, 7, 5, 4, 3, 2, 6],              # 전등 끔
+        ])
         months2 = [
             "~2시", "~4시", "~6시", "~8시", "~10시",
             "~12시", "~14시", "~16시", "~18시", "~20시",
@@ -298,10 +164,7 @@ class DashboardWidget(QWidget):
 
     def draw_graph3(self):
         # 데이터 예시 (월별 4종류)
-        months = []
-
-        for i in range(len(self.data['monthly_stats'])):
-            months.append(f'{i + 1}월')
+        months = ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"]
 
         # Figure/Canvas 생성
         self.bar_canvas = FigureCanvas(Figure(figsize=(8, 3)))
@@ -314,27 +177,19 @@ class DashboardWidget(QWidget):
         n = len(self.labels)
         width = 0.12
 
-        data = []
-        for l, label in enumerate(self.labels):
-            s_data = []
-            for i in self.data['monthly_stats']:
-                s_data.append(i['count'][l])
-            data.append(s_data)
-
-        print("data:", data)
         for i in range(n):
             offset = (i - (n - 1) / 2) * width * 1.2
-            ax.bar(x + offset, data[i], width, label=self.labels[i], color=self.colors[i])
+            ax.bar(x + offset, self.data[i], width, label=self.labels[i], color=self.colors[i])
             
         ax.set_xticks(x)
         ax.set_xticklabels(months, fontsize=9)
         # y축에 최소, 중간, 최대 값 표시
-        min_val = np.min(data)
-        max_val = np.max(data)
+        min_val = np.min(self.data)
+        max_val = np.max(self.data)
         mid_val = (min_val + max_val) // 2
         ax.set_yticks([min_val, mid_val, max_val])
         ax.set_yticklabels([str(min_val)+" 건", str(mid_val)+" 건", str(max_val)+" 건"], fontsize=9)
-        ax.set_ylim(0, np.max(data) * 1.2)
+        ax.set_ylim(0, np.max(self.data) * 1.2)
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         ax.spines['left'].set_color('#999')
@@ -353,10 +208,10 @@ class DashboardWidget(QWidget):
         self.legend_label2 = QLabel("")
         self.legend_label3 = QLabel("")
         self.legend_label4 = QLabel("")
-        self.legend_title1 = QLabel(f"파손({np.sum(self.data['monthly_stats'][self.month1.value() - 1]['count'][0])})")
-        self.legend_title2 = QLabel(f"유기({np.sum(self.data['monthly_stats'][self.month1.value() - 1]['count'][1])})")
-        self.legend_title3 = QLabel(f"절도({np.sum(self.data['monthly_stats'][self.month1.value() - 1]['count'][2])})")
-        self.legend_title4 = QLabel(f"전등 끔({np.sum(self.data['monthly_stats'][self.month1.value() - 1]['count'][3])})")
+        self.legend_title1 = QLabel(f"파손({np.sum(self.data[0])})")
+        self.legend_title2 = QLabel(f"유기({np.sum(self.data[1])})")
+        self.legend_title3 = QLabel(f"절도({np.sum(self.data[2])})")
+        self.legend_title4 = QLabel(f"전등 끔({np.sum(self.data[3])})")
         self.legend_label1.setProperty("class", "label primary")
         self.legend_label2.setProperty("class", "label secondary")
         self.legend_label3.setProperty("class", "label therity")

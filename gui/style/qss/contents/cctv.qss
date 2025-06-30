@@ -37,24 +37,26 @@
     border-radius: {{radius}};
 }
 
-
-.playBtn.play {
-    qproperty-icon: url("./style/images/ico-play.png");
-    qproperty-iconSize: 30px 30px;
-    border: 1px solid {{primary}};
-    border-radius: {{radius}};
-}
-
-.playBtn.pause {
-    qproperty-icon: url("./style/images/ico-pause.png");
-    qproperty-iconSize: 30px 30px;
+.playBtn {
+    qproperty-icon: url("./style/images/ico-dropdown.svg");
+    qproperty-iconSize: 36px 36px;
+    background-color: white;
     border: 1px solid {{primary}};
     border-radius: {{radius}};
 }
 
 .playBtn:hover {
     background-color: rgba(3, 180, 200, 0.1);
-    border: 1px solid {{primary}};
+}
+
+.playBtn.play {
+    qproperty-icon: url("./style/images/ico-play.png");
+    qproperty-iconSize: 30px 30px;
+}
+
+.playBtn.pause {
+    qproperty-icon: url("./style/images/ico-pause.png");
+    qproperty-iconSize: 30px 30px;
 }
 
 .forwardBtn {

@@ -122,7 +122,7 @@
      <x>20</x>
      <y>66</y>
      <width>1210</width>
-     <height>112</height>
+     <height>76</height>
     </rect>
    </property>
    <property name="font">
@@ -231,13 +231,67 @@
     <string>전등 끔</string>
    </property>
   </widget>
+  <widget class="QRadioButton" name="radio1">
+   <property name="geometry">
+    <rect>
+     <x>745</x>
+     <y>86</y>
+     <width>60</width>
+     <height>36</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Inter 18pt</family>
+    </font>
+   </property>
+   <property name="text">
+    <string>전체</string>
+   </property>
+  </widget>
+  <widget class="QRadioButton" name="radio2">
+   <property name="geometry">
+    <rect>
+     <x>805</x>
+     <y>86</y>
+     <width>100</width>
+     <height>36</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Inter 18pt</family>
+    </font>
+   </property>
+   <property name="text">
+    <string>확인 완료</string>
+   </property>
+  </widget>
+  <widget class="QRadioButton" name="radio3">
+   <property name="geometry">
+    <rect>
+     <x>905</x>
+     <y>86</y>
+     <width>100</width>
+     <height>36</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Inter 18pt</family>
+    </font>
+   </property>
+   <property name="text">
+    <string>미확인</string>
+   </property>
+  </widget>
   <widget class="QTableWidget" name="detect_table">
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>198</y>
+     <y>162</y>
      <width>1210</width>
-     <height>634</height>
+     <height>670</height>
     </rect>
    </property>
    <property name="font">
@@ -571,163 +625,6 @@
     <string>조회</string>
    </property>
   </widget>
-  <widget class="QLabel" name="text3">
-   <property name="geometry">
-    <rect>
-     <x>40</x>
-     <y>122</y>
-     <width>120</width>
-     <height>36</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <family>Inter 18pt</family>
-     <weight>75</weight>
-     <bold>true</bold>
-    </font>
-   </property>
-   <property name="text">
-    <string>즐겨찾기</string>
-   </property>
-   <property name="margin">
-    <number>10</number>
-   </property>
-  </widget>
-  <widget class="QGroupBox" name="groupBox">
-   <property name="geometry">
-    <rect>
-     <x>745</x>
-     <y>86</y>
-     <width>381</width>
-     <height>36</height>
-    </rect>
-   </property>
-   <property name="title">
-    <string/>
-   </property>
-   <widget class="QRadioButton" name="radio1">
-    <property name="geometry">
-     <rect>
-      <x>0</x>
-      <y>0</y>
-      <width>60</width>
-      <height>36</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <family>Inter 18pt</family>
-     </font>
-    </property>
-    <property name="text">
-     <string>전체</string>
-    </property>
-   </widget>
-   <widget class="QRadioButton" name="radio2">
-    <property name="geometry">
-     <rect>
-      <x>70</x>
-      <y>0</y>
-      <width>100</width>
-      <height>36</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <family>Inter 18pt</family>
-     </font>
-    </property>
-    <property name="text">
-     <string>확인 완료</string>
-    </property>
-   </widget>
-   <widget class="QRadioButton" name="radio3">
-    <property name="geometry">
-     <rect>
-      <x>170</x>
-      <y>0</y>
-      <width>100</width>
-      <height>36</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <family>Inter 18pt</family>
-     </font>
-    </property>
-    <property name="text">
-     <string>미확인</string>
-    </property>
-   </widget>
-  </widget>
-  <widget class="QGroupBox" name="groupBox2">
-   <property name="geometry">
-    <rect>
-     <x>160</x>
-     <y>122</y>
-     <width>381</width>
-     <height>36</height>
-    </rect>
-   </property>
-   <property name="title">
-    <string/>
-   </property>
-   <widget class="QRadioButton" name="radio4">
-    <property name="geometry">
-     <rect>
-      <x>0</x>
-      <y>0</y>
-      <width>60</width>
-      <height>36</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <family>Inter 18pt</family>
-     </font>
-    </property>
-    <property name="text">
-     <string>전체</string>
-    </property>
-   </widget>
-   <widget class="QRadioButton" name="radio5">
-    <property name="geometry">
-     <rect>
-      <x>70</x>
-      <y>0</y>
-      <width>60</width>
-      <height>36</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <family>Inter 18pt</family>
-     </font>
-    </property>
-    <property name="text">
-     <string>선택</string>
-    </property>
-   </widget>
-   <widget class="QRadioButton" name="radio6">
-    <property name="geometry">
-     <rect>
-      <x>140</x>
-      <y>0</y>
-      <width>100</width>
-      <height>36</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <family>Inter 18pt</family>
-     </font>
-    </property>
-    <property name="text">
-     <string>제외</string>
-    </property>
-   </widget>
-  </widget>
   <zorder>filter_bg</zorder>
   <zorder>toggle_bg</zorder>
   <zorder>text1</zorder>
@@ -739,6 +636,9 @@
   <zorder>checkbox2</zorder>
   <zorder>checkbox3</zorder>
   <zorder>checkbox4</zorder>
+  <zorder>radio1</zorder>
+  <zorder>radio2</zorder>
+  <zorder>radio3</zorder>
   <zorder>detect_table</zorder>
   <zorder>year1</zorder>
   <zorder>text_year1</zorder>
@@ -754,9 +654,6 @@
   <zorder>date2</zorder>
   <zorder>text_date2</zorder>
   <zorder>search_btn</zorder>
-  <zorder>text3</zorder>
-  <zorder>groupBox</zorder>
-  <zorder>groupBox2</zorder>
  </widget>
  <resources/>
  <connections/>

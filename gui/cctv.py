@@ -22,10 +22,11 @@ import json
 from sympy import sec
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# 사용자 모듈
 from modules.user_info import *
-from video_popup import VideoPopupWidget
+
 from server.config import CENTRAL_IP, CENTRAL_GUI_PORT
+from video_popup import VideoPopupWidget
+
 from style import apply_style
 
 
@@ -164,6 +165,8 @@ class CCTVWidget(QWidget):
             response = requests.post(url, json=req_data)
             if response.status_code == 200:
                 result = response.json()
+                print("[cctv 알림 - 응답 내용]:", result)
+                
                 self.original_data = result
                 self.data = self.original_data.copy()  # 초기 데이터 복사
                 # return result
@@ -243,7 +246,6 @@ class CCTVWidget(QWidget):
                                 center_pos.setX(center_pos.x() - 95)
                                 center_pos.setY(center_pos.y() - 25)
                                 self.video_popup_widget.show_at(center_pos)
-                                self.video_popup_widget.refresh()  # 비디오 팝업 위젯 새로고침
 
                                 # 비디오 수신
                                 video_url = f'http://{CENTRAL_IP}:{CENTRAL_GUI_PORT}/load/video?video_url={tmp_row_data['video_url']}'
