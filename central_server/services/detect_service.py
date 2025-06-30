@@ -87,8 +87,10 @@ def get_filtered_logs(filters):
             start = today
             end = today + timedelta(days=1)
         elif period == "week":
-            start = datetime.now() - timedelta(days=7)
-            end = datetime.now()
+            start = today - timedelta(days=6)  # 6일 전부터 (오늘 포함 7일)
+            end = today + timedelta(days=1)    # 내일 00:00:00까지
+            # start = datetime.now() - timedelta(days=7)
+            # end = datetime.now()
             # start = today - timedelta(days=today.weekday())
             # end = start + timedelta(days=7)
         elif period == "month":
