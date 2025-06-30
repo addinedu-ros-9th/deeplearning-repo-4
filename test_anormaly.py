@@ -13,10 +13,21 @@ from collections import Counter
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def load_model(model_path):
-    model = AnomalyDetector()
-    model.load_state_dict(torch.load(model_path, map_location=device))
-    model = model.to(device)
-    model.eval()
+    """
+    모델을 로드합니다. TorchScript 모델인지 확인하여 적절히 로드합니다.
+    """
+    if model_path.endswith('.pt') and 'torchscript' in model_path:
+        # TorchScript 모델 로드
+        print(f"TorchScript 모델 로딩: {model_path}")
+        model = torch.jit.load(model_path, map_location=device)
+        model.eval()
+    else:
+        # 일반 PyTorch 모델 로드
+        print(f"일반 PyTorch 모델 로딩: {model_path}")
+        model = AnomalyDetector()
+        model.load_state_dict(torch.load(model_path, map_location=device))
+        model = model.to(device)
+        model.eval()
     return model
 
 def extract_joints(frame, pose_model):
@@ -271,7 +282,7 @@ def print_results_summary(results):
         print(f"Max Anomaly Score: {result['max_score']:.4f}")
 
 if __name__ == "__main__":
-    model_path = "saved_models/스트그쓰느.pth"
+    model_path = "saved_models/스트그쓰느스트1_torchscript.pt"
     model = load_model(model_path)
     pose_model = YOLO('yolov8n-pose.pt')
     test_dir = "/home/koo4802/Desktop/test_videos"

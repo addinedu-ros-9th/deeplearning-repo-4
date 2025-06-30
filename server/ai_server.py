@@ -187,11 +187,21 @@ def send_frame_udp_to_gui(frame):
         print(f"[AI 서버] GUI UDP 전송 오류: {e}")
 
 def load_model(model_path):
-    """모델 로드 함수"""
-    model = AnomalyDetector()
-    model.load_state_dict(torch.load(model_path, map_location=device))
-    model = model.to(device)
-    model.eval()
+    """
+    모델 로드 함수 - TorchScript 모델도 지원
+    """
+    if model_path.endswith('.pt') and 'torchscript' in model_path:
+        # TorchScript 모델 로드
+        print(f"[AI 서버] TorchScript 모델 로딩: {model_path}")
+        model = torch.jit.load(model_path, map_location=device)
+        model.eval()
+    else:
+        # 일반 PyTorch 모델 로드
+        print(f"[AI 서버] 일반 PyTorch 모델 로딩: {model_path}")
+        model = AnomalyDetector()
+        model.load_state_dict(torch.load(model_path, map_location=device))
+        model = model.to(device)
+        model.eval()
     return model
 
 def extract_joints(frame, pose_model):
@@ -934,7 +944,8 @@ def send_clip_frames_to_central_server(clip_frames, action_name, person_count, t
 if __name__ == "__main__":
     # 프로젝트 루트를 기준으로 모델 파일의 절대 경로 생성
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    model_path = os.path.join(project_root, "saved_models/스트그쓰느.pth")  # test_anormaly.py와 동일한 모델 사용
+    # TorchScript 최적화된 모델 사용
+    model_path = os.path.join(project_root, "saved_models/스트그쓰느스트1_torchscript.pt")
     
     # UDP 설정 - cctv_udp_client.py와 호환
     udp_ip = "0.0.0.0"  # 모든 인터페이스에서 수신
