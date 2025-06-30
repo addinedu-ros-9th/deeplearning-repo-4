@@ -47,7 +47,7 @@ def get_filtered_logs(filters):
     cursor = conn.cursor(dictionary=True)
 
     base_query = """
-        SELECT s.store_name, d.time, d.event_type, d.person_count, d.is_checked, d.video_url
+        SELECT s.store_name, d.time, d.event_type, d.person_count, d.is_checked, d.video_url, d.favorite
         FROM cctv_data d
         JOIN store s ON d.store_name = s.store_name
         WHERE 1=1
@@ -87,8 +87,10 @@ def get_filtered_logs(filters):
             start = today
             end = today + timedelta(days=1)
         elif period == "week":
-            start = today - timedelta(days=today.weekday())
-            end = start + timedelta(days=7)
+            start = datetime.now() - timedelta(days=7)
+            end = datetime.now()
+            # start = today - timedelta(days=today.weekday())
+            # end = start + timedelta(days=7)
         elif period == "month":
             start = today.replace(day=1)
             if start.month == 12:

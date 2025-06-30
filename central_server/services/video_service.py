@@ -96,13 +96,16 @@ def update_video_favorite(user_id, video_url, favorite):
         # 즐겨찾기 상태 업데이트 (해당 user의 store_name과 일치하는 경우만)
         update_query = "UPDATE cctv_data SET favorite = %s WHERE video_url = %s AND store_name = %s"
         cursor.execute(update_query, (favorite, video_url, store_name))
-        updated_count = cursor.rowcount
-        
+        # updated_count = cursor.rowcount
         conn.commit()
+        # 여기서 rowcount가 0이어도, 실제로 값이 이미 원하는 값이면 성공으로 간주
+        # 즉, row가 존재하는지 한 번 더 체크
+        cursor.execute("SELECT 1 FROM cctv_data WHERE video_url = %s AND store_name = %s", (video_url, store_name))
+        exists = cursor.fetchone()
         cursor.close()
         conn.close()
         
-        return updated_count > 0
+        return exists is not None
     except Exception as e:
         print(f"VideoService: Error updating video favorite: {e}")
         return False 
