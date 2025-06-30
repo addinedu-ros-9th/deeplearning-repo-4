@@ -104,41 +104,44 @@
     <string/>
    </property>
   </widget>
-  <widget class="QWidget" name="horizontalLayoutWidget">
+  <widget class="QLabel" name="current_time">
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>760</y>
-     <width>161</width>
-     <height>31</height>
+     <y>770</y>
+     <width>77</width>
+     <height>20</height>
     </rect>
    </property>
-   <layout class="QHBoxLayout" name="horizontalLayout">
-    <item>
-     <widget class="QLabel" name="current_time">
-      <property name="font">
-       <font>
-        <family>Inter 18pt</family>
-       </font>
-      </property>
-      <property name="text">
-       <string>time</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLabel" name="end_time">
-      <property name="font">
-       <font>
-        <family>Inter 18pt</family>
-       </font>
-      </property>
-      <property name="text">
-       <string>time</string>
-      </property>
-     </widget>
-    </item>
-   </layout>
+   <property name="font">
+    <font>
+     <family>Inter 18pt</family>
+    </font>
+   </property>
+   <property name="text">
+    <string>time</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="end_time">
+   <property name="geometry">
+    <rect>
+     <x>1200</x>
+     <y>770</y>
+     <width>100</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Inter 18pt</family>
+    </font>
+   </property>
+   <property name="text">
+    <string>time</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+   </property>
   </widget>
  </widget>
  <resources/>

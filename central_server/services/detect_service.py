@@ -128,6 +128,13 @@ def get_filtered_logs(filters):
             placeholders = ','.join(['%s'] * len(is_checked))
             where_clauses.append(f"d.is_checked IN ({placeholders})")
             params.extend(is_checked)
+    # favorite (여러 개)
+    if filters.get('favorite'):
+        favorites = filters['favorite']
+        if isinstance(favorites, list) and favorites:
+            placeholders = ','.join(['%s'] * len(favorites))
+            where_clauses.append(f"d.favorite IN ({placeholders})")
+            params.extend(favorites)
 
     # 최종 쿼리 조립
     query = base_query

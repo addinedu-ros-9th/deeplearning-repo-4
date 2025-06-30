@@ -107,6 +107,7 @@ class LayoutWindow(QMainWindow):
         self.cctv_widget.show()
         self.dashboard_widget.hide()
         self.detect_log_widget.hide()
+        self.cctv_widget.refresh()  # CCTV 위젯 새로고침
     
     def clickMenu2(self):
         self.menuBtn1.setProperty("class", "menuBtn1")
@@ -122,6 +123,7 @@ class LayoutWindow(QMainWindow):
         self.cctv_widget.hide()
         self.dashboard_widget.show()
         self.detect_log_widget.hide()
+        self.dashboard_widget.refresh()  # 대시보드 위젯 새로고침
     
     def clickMenu3(self):
         self.menuBtn1.setProperty("class", "menuBtn1")
@@ -137,6 +139,7 @@ class LayoutWindow(QMainWindow):
         self.cctv_widget.hide()
         self.dashboard_widget.hide()
         self.detect_log_widget.show()
+        self.detect_log_widget.refresh()
 
     def handle_logout2(self):
         """로그아웃 처리"""
