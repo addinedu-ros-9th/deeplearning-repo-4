@@ -41,7 +41,7 @@ MIN_VALID_POINTS_FOR_BBOX = 5
 MIN_FACE_KEYPOINTS = 2
 BODY_PADDING_RATIO = 0.1
 FACE_PADDING_RATIO = 0.2
-PREDICTION_BUFFER_SIZE = 7
+PREDICTION_BUFFER_SIZE = 10  # 연속성 감지를 위해 증가
 VIDEO_BUFFER_SIZE = 45
 PRE_BUFFER_SIZE = 15
 SAVE_COUNTDOWN = 45
@@ -204,6 +204,7 @@ def extract_joints(frame, pose_model):
             joints = np.zeros(17 * 4)
             for i, kp in enumerate(keypoints[0][:17]):  # 첫 번째 사람의 관절점만 사용
                 if i < 17:
+                    # Use 256 normalization to match training data
                     joints[i*4:(i+1)*4] = [kp[0]/256, kp[1]/256, 0.0, kp[2]]
             return joints, keypoints
         else:
@@ -400,8 +401,44 @@ def receive_frame_udp_packetized(sock):
         print(f"UDP 수신 오류: {e}")
         return None
 
+def get_consecutive_abnormal_label(framewise_preds, consecutive_threshold=5):
+    """
+    연속성 기반 이상 행위 라벨 결정 함수
+    - 연속으로 Normal이 아닌 프레임이 consecutive_threshold개 이상 감지되면 해당 라벨로 인식
+    - 실시간 반영 가능
+    """
+    if len(framewise_preds) == 0:
+        return 0
+    
+    current_label = None
+    consecutive_count = 0
+    
+    for i, pred in enumerate(framewise_preds):
+        if pred != 0:  # Normal이 아닌 경우
+            if current_label is None:
+                # 새로운 이상 행위 시작
+                current_label = pred
+                consecutive_count = 1
+            elif pred == current_label:
+                # 같은 라벨이 연속
+                consecutive_count += 1
+                # 임계값 도달하면 즉시 반환
+                if consecutive_count >= consecutive_threshold:
+                    return current_label
+            else:
+                # 다른 라벨이 감지되면 리셋
+                current_label = pred
+                consecutive_count = 1
+        else:
+            # Normal이 감지되면 리셋
+            current_label = None
+            consecutive_count = 0
+    
+    # 마지막까지 임계값에 도달하지 못하면 Normal
+    return 0
+
 def process_prediction_buffer(pred_buffer, current_prediction, prev_prediction):
-    """예측 버퍼 처리"""
+    """예측 버퍼 처리 - 연속성 기반으로 개선"""
     if current_prediction is not None:
         if prev_prediction is not None and current_prediction != prev_prediction:
             pred_buffer.clear()
@@ -410,22 +447,24 @@ def process_prediction_buffer(pred_buffer, current_prediction, prev_prediction):
     return prev_prediction
 
 def should_start_saving(pred_buffer, saving, last_saved_action, light_off_frame_count, light_off_min_frames):
-    """저장 시작 조건 확인"""
-    # 기존 AI 예측 기반 저장 조건
-    ai_condition = (
-        len(pred_buffer) == PREDICTION_BUFFER_SIZE and
-        len(set(pred_buffer)) == 1 and
-        pred_buffer[0] != 0 and
-        not saving and
-        pred_buffer[0] != last_saved_action
-    )
-    
+    """저장 시작 조건 확인 - 연속성 기반으로 개선"""
     # Light OFF 기반 저장 조건
     light_off_condition = (
         light_off_frame_count >= light_off_min_frames and
         not saving and
         "light_off" != last_saved_action
     )
+    
+    # 연속성 기반 AI 예측 저장 조건
+    if len(pred_buffer) >= 5:  # 최소 5프레임 필요
+        consecutive_action = get_consecutive_abnormal_label(list(pred_buffer), consecutive_threshold=5)
+        ai_condition = (
+            consecutive_action != 0 and  # Normal이 아닌 행위가 연속 감지
+            not saving and
+            consecutive_action != last_saved_action
+        )
+    else:
+        ai_condition = False
     
     return ai_condition or light_off_condition
 
@@ -655,7 +694,7 @@ def realtime_anomaly_detection(model_path, pose_model_path='yolov8n-pose.pt', se
                             input_tensor = torch.FloatTensor(list(joints_sequence)).unsqueeze(0).to(device)
                             with torch.no_grad():
                                 logits = model(input_tensor)
-                                probs = F.softmax(logits[:, -1, :], dim=-1).cpu().numpy()[0]
+                                probs = F.softmax(logits, dim=1).cpu().numpy()[0]
                             
                             # 신뢰도가 0.8 이상일 때만 해당 라벨로 예측, 그 이하는 Normal
                             max_prob = np.max(probs)
@@ -711,7 +750,7 @@ def realtime_anomaly_detection(model_path, pose_model_path='yolov8n-pose.pt', se
                             send_notification("Light_OFF", person_count, "1.00")
                         else:
                             # 기존 AI 예측 기반
-                            detected_action = list(set(pred_buffer))[0]
+                            detected_action = get_consecutive_abnormal_label(pred_buffer)
                             action_name = LABEL_NAMES[detected_action]
                             last_saved_action = detected_action
                             # 이상 행위 시스템 알림
@@ -895,7 +934,7 @@ def send_clip_frames_to_central_server(clip_frames, action_name, person_count, t
 if __name__ == "__main__":
     # 프로젝트 루트를 기준으로 모델 파일의 절대 경로 생성
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    model_path = os.path.join(project_root, "saved_models/노말변경3개.pth")
+    model_path = os.path.join(project_root, "saved_models/스트그쓰느.pth")  # test_anormaly.py와 동일한 모델 사용
     
     # UDP 설정 - cctv_udp_client.py와 호환
     udp_ip = "0.0.0.0"  # 모든 인터페이스에서 수신

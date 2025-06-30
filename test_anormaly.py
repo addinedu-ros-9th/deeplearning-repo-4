@@ -8,6 +8,7 @@ import os
 from tqdm import tqdm
 import torch.nn.functional as F
 import torchvision.transforms as transforms
+from collections import Counter
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -27,6 +28,7 @@ def extract_joints(frame, pose_model):
             joints = np.zeros(17 * 4)
             for i, kp in enumerate(keypoints):
                 if i < 17:
+                    # Use 256 normalization to match training data
                     joints[i*4:(i+1)*4] = [kp[0]/256, kp[1]/256, 0.0, kp[2]]
             return joints, keypoints
         else:
@@ -35,33 +37,43 @@ def extract_joints(frame, pose_model):
         print(f"Error processing frame: {e}")
         return np.zeros(17 * 4), None
 
-def get_abnormal_label(framewise_preds, min_length=7):
-    start = None
+def get_abnormal_label(framewise_preds, anomaly_scores, consecutive_threshold=5):
+    """
+    연속성 기반 이상 행위 라벨 결정 함수
+    - 연속으로 Normal이 아닌 프레임이 consecutive_threshold개 이상 감지되면 해당 라벨로 인식
+    - 실시간 반영 가능
+    """
+    if len(framewise_preds) == 0:
+        return 0
+    
     current_label = None
-    for i, label in enumerate(framewise_preds):
-        print(f"i={i}, label={label}, start={start}, current_label={current_label}")
-        if label != 0:
-            if start is None:
-                start = i
-                current_label = label
-            elif label != current_label:
-                if i - start >= min_length:
-                    print(f"Detected abnormal: {current_label} from {start} to {i-1}")
+    consecutive_count = 0
+    
+    for i, pred in enumerate(framewise_preds):
+        if pred != 0:  # Normal이 아닌 경우
+            if current_label is None:
+                # 새로운 이상 행위 시작
+                current_label = pred
+                consecutive_count = 1
+            elif pred == current_label:
+                # 같은 라벨이 연속
+                consecutive_count += 1
+                # 임계값 도달하면 즉시 반환
+                if consecutive_count >= consecutive_threshold:
                     return current_label
-                start = i
-                current_label = label
+            else:
+                # 다른 라벨이 감지되면 리셋
+                current_label = pred
+                consecutive_count = 1
         else:
-            if start is not None and i - start >= min_length:
-                print(f"Detected abnormal: {current_label} from {start} to {i-1}")
-                return current_label
-            start = None
+            # Normal이 감지되면 리셋
             current_label = None
-    if start is not None and len(framewise_preds) - start >= min_length:
-        print(f"Detected abnormal: {current_label} from {start} to {len(framewise_preds)-1}")
-        return current_label
-    return 0  # 모두 normal
+            consecutive_count = 0
+    
+    # 마지막까지 임계값에 도달하지 못하면 Normal
+    return 0
 
-def predict_video(model, video_path, pose_model, threshold=0.5, original_fps=5, target_fps=3, result_dir=None):
+def predict_video(model, video_path, pose_model, threshold=0.5, frame_interval=1, result_dir=None):
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         print(f"Error: Could not open video {video_path}")
@@ -90,10 +102,10 @@ def predict_video(model, video_path, pose_model, threshold=0.5, original_fps=5, 
         if not ret:
             break
         
-        # FPS 다운샘플링
-        if frame_count % (original_fps // target_fps) == 0:
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        # 프레임 샘플링 (frame_interval 프레임마다 처리)
+        if frame_count % frame_interval == 0:
             joints, keypoints = extract_joints(frame, pose_model)
+            
             # 관절점 시각화 및 감지 여부
             has_person = False
             if keypoints is not None:
@@ -122,12 +134,16 @@ def predict_video(model, video_path, pose_model, threshold=0.5, original_fps=5, 
                 out.write(frame)
                 frame_count += 1
                 continue
+                
+            # 모델 예측
             input_tensor = torch.FloatTensor(joints_sequence).unsqueeze(0).to(device)
             with torch.no_grad():
                 logits = model(input_tensor)
-                probs = F.softmax(logits[:, -1, :], dim=-1).cpu().numpy()[0]
+                probs = F.softmax(logits, dim=1).cpu().numpy()[0]
+                
             anomaly_scores.append(probs)
             frames.append(frame)
+            
             # 오버레이: 예측 결과
             cv2.putText(frame, f"Normal: {probs[0]:.2f}", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2)
             cv2.putText(frame, f"Theft: {probs[1]:.2f}", (50, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2)
@@ -139,20 +155,20 @@ def predict_video(model, video_path, pose_model, threshold=0.5, original_fps=5, 
             out.write(frame)
             joints_sequence.pop(0)
         else:
-            # 다운샘플링 안 된 프레임도 그대로 저장
+            # 샘플링 안 된 프레임도 그대로 저장
             out.write(frame)
         frame_count += 1
     cap.release()
     out.release()
+    
     if not anomaly_scores:
         return None, None, None, None
+        
     anomaly_scores_array = np.array(anomaly_scores)
     max_score = np.max(anomaly_scores_array)
     # 다중 클래스 분류를 위한 임계값 설정
     framewise_preds = np.argmax(anomaly_scores_array, axis=1)
-    print("framewise_preds:", framewise_preds.tolist())  # 예측 시퀀스 출력
-    predicted_label = get_abnormal_label(framewise_preds, min_length=5)
-    print("Predicted label by abnormal rule:", predicted_label)
+    predicted_label = get_abnormal_label(framewise_preds, anomaly_scores_array, consecutive_threshold=5)
     return max_score, anomaly_scores, frames, predicted_label
 
 def get_label_from_filename(filename):
@@ -166,7 +182,7 @@ def get_label_from_filename(filename):
     else:
         return 0  # Normal (or other)
 
-def process_directory(model, base_dir, pose_model, threshold=0.5, original_fps=5, target_fps=3):
+def process_directory(model, base_dir, pose_model, threshold=0.5, frame_interval=1):
     results = []
     # 모든 mp4 파일을 가져와서 라벨 매핑
     video_files = []
@@ -180,7 +196,7 @@ def process_directory(model, base_dir, pose_model, threshold=0.5, original_fps=5
         if not os.path.exists(video_path):
             print(f"Warning: Video file not found: {video_path}")
             continue
-        max_score, anomaly_scores, frames, predicted_label = predict_video(model, video_path, pose_model, threshold, original_fps, target_fps, result_dir=result_dir)
+        max_score, anomaly_scores, frames, predicted_label = predict_video(model, video_path, pose_model, threshold, frame_interval, result_dir=result_dir)
         if max_score is not None:
             anomaly_scores_array = np.array(anomaly_scores)
             framewise_preds = np.argmax(anomaly_scores_array, axis=1)
@@ -255,10 +271,10 @@ def print_results_summary(results):
         print(f"Max Anomaly Score: {result['max_score']:.4f}")
 
 if __name__ == "__main__":
-    model_path = "saved_models/노말변경3개.pth"
+    model_path = "saved_models/스트그쓰느.pth"
     model = load_model(model_path)
     pose_model = YOLO('yolov8n-pose.pt')
     test_dir = "/home/koo4802/Desktop/test_videos"
-    results = process_directory(model, test_dir, pose_model, threshold=0.5, original_fps=5, target_fps=3)
+    results = process_directory(model, test_dir, pose_model, threshold=0.5, frame_interval=1)
     print_results_summary(results)
     print("\nAnalysis complete! Check 'test_results' directory for individual video visualizations.") 
