@@ -192,7 +192,6 @@ class DetectLogWidget(QWidget):
             response = requests.post(url, json=req_data)
             if response.status_code == 200:
                 result = response.json()
-                print("[cctv 알림 - 응답 내용]:", result)
                 self.data = result
                 # return result
             else:
