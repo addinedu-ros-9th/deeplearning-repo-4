@@ -44,6 +44,7 @@ class DetectLogWidget(QWidget):
         self.toggle_bg.setProperty("class", "radius bg graye")
         self.text1.setProperty("class", "color-black size14 weight700")
         self.text2.setProperty("class", "color-black size14 weight700")
+        self.text3.setProperty("class", "color-black size14 weight700")
         self.toggle1.setProperty("class", "toggle") # 토글 버튼 오늘 
         self.toggle2.setProperty("class", "toggle active") # 토글 버튼 주간
         self.toggle3.setProperty("class", "toggle") # 토글 버튼 월간
@@ -75,7 +76,11 @@ class DetectLogWidget(QWidget):
         self.radio1.setProperty("class", "radiobox") # 전체
         self.radio2.setProperty("class", "radiobox") # 확인 완료
         self.radio3.setProperty("class", "radiobox") # 미확인
+        self.radio4.setProperty("class", "radiobox") # 전체
+        self.radio5.setProperty("class", "radiobox") # 확인 완료
+        self.radio6.setProperty("class", "radiobox") # 미확인
         self.radio1.setChecked(True) 
+        self.radio4.setChecked(True) 
         self.detect_table.setProperty("class", "table") 
         self.search_btn.setProperty("class", "btn outlined primary weight700") # 검색 버튼
 
