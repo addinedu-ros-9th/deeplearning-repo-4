@@ -423,7 +423,7 @@ class DetectLogWidget(QWidget):
                         cell_widget.setLayout(layout)
                         self.detect_table.setCellWidget(row, col + 2, cell_widget)
                     else:
-                        confirm_label = QLabel("미확인")
+                        confirm_label = QLabel("미확정")
                         confirm_label.setProperty("class", "label unconfirm")
                         confirm_label.setAlignment(Qt.AlignmentFlag.AlignCenter)  # 가운데 정렬
 
