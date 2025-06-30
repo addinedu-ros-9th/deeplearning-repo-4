@@ -749,50 +749,52 @@ def realtime_anomaly_detection(model_path, pose_model_path='yolov8n-pose.pt', se
                     if should_start_saving(pred_buffer, saving, last_saved_action, light_off_frame_count, light_off_min_frames):
                         # 사람이 감지되지 않았으면 저장하지 않음
                         if person_count == 0:
-                            continue
-                            
-                        saving = True
-                        save_countdown = SAVE_COUNTDOWN
-                        
-                        # Light OFF 상태인지 확인
-                        if light_off_frame_count >= light_off_min_frames:
-                            detected_action = "light_off"
-                            action_name = "Light_OFF"
-                            last_saved_action = "light_off"
-                            # Light OFF 알림
-                            send_notification("Light_OFF", person_count, "1.00")
+                            pass  # 저장하지 않지만 계속 진행
                         else:
-                            # 기존 AI 예측 기반
-                            detected_action = get_consecutive_abnormal_label(pred_buffer)
-                            action_name = LABEL_NAMES[detected_action]
-                            last_saved_action = detected_action
-                            # 이상 행위 시스템 알림
-                            # 현재 프레임의 확률을 클립 확률에 저장
-                            if 'probs' in locals():
-                                clip_probabilities.append(probs.copy())
-                                # 해당 행위의 confidence 사용
-                                current_confidence = probs[detected_action]
-                                clip_confidences = [probs[detected_action] for probs in clip_probabilities]
-                                max_confidence = np.max(clip_confidences)
+                            saving = True
+                            save_countdown = SAVE_COUNTDOWN
+                            
+                            # Light OFF 상태인지 확인
+                            if light_off_frame_count >= light_off_min_frames:
+                                detected_action = "light_off"
+                                action_name = "Light_OFF"
+                                last_saved_action = "light_off"
+                                print(f"[DEBUG] Light OFF recording started! Count: {light_off_frame_count}, Brightness: {curr_brightness:.1f}")
+                                # Light OFF 알림
+                                send_notification("Light_OFF", person_count, "1.00")
                             else:
-                                max_confidence = 1.0
-                            confidence_str = f"{max_confidence:.2f}"
-                            send_notification(action_name, person_count, confidence_str)
-                        
-                        dt_str = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-                        
-                        # 클립 프레임 버퍼 초기화
-                        clip_frames = []
-                        # clip_probabilities는 이미 현재 프레임의 확률이 저장되어 있으므로 초기화하지 않음
-                        
-                        # 새 클립 시작 시 사람 수 초기화
-                        current_clip_max_persons = person_count
-                        
-                        print(f"Started recording clip: {action_name}")
-                        # 이전 버퍼 프레임들 처리
-                        for pre_frame in pre_buffer_frames:
-                            clip_frames.append(pre_frame.copy())
-                            current_clip_max_persons = max(current_clip_max_persons, count_valid_persons(extract_joints(pre_frame, pose_model)[1]))
+                                # 기존 AI 예측 기반
+                                detected_action = get_consecutive_abnormal_label(pred_buffer)
+                                action_name = LABEL_NAMES[detected_action]
+                                last_saved_action = detected_action
+                                print(f"[DEBUG] AI prediction recording started! Action: {action_name}")
+                                # 이상 행위 시스템 알림
+                                # 현재 프레임의 확률을 클립 확률에 저장
+                                if 'probs' in locals():
+                                    clip_probabilities.append(probs.copy())
+                                    # 해당 행위의 confidence 사용
+                                    current_confidence = probs[detected_action]
+                                    clip_confidences = [probs[detected_action] for probs in clip_probabilities]
+                                    max_confidence = np.max(clip_confidences)
+                                else:
+                                    max_confidence = 1.0
+                                confidence_str = f"{max_confidence:.2f}"
+                                send_notification(action_name, person_count, confidence_str)
+                            
+                            dt_str = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+                            
+                            # 클립 프레임 버퍼 초기화
+                            clip_frames = []
+                            # clip_probabilities는 이미 현재 프레임의 확률이 저장되어 있으므로 초기화하지 않음
+                            
+                            # 새 클립 시작 시 사람 수 초기화
+                            current_clip_max_persons = person_count
+                            
+                            print(f"Started recording clip: {action_name}")
+                            # 이전 버퍼 프레임들 처리
+                            for pre_frame in pre_buffer_frames:
+                                clip_frames.append(pre_frame.copy())
+                                current_clip_max_persons = max(current_clip_max_persons, count_valid_persons(extract_joints(pre_frame, pose_model)[1]))
                     
                     # 저장 중 처리
                     if saving:
