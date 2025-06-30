@@ -147,6 +147,9 @@ class VideoDataset(Dataset):
         with SuppressOutput():
             pose_model = YOLO('yolov8n-pose.pt')
         
+        # 레이블 분포 확인을 위한 카운터
+        label_counter = Counter()
+        
         # tqdm으로 진행상황 표시
         label_dirs = [(label_name, label) for label_name, label in self.LABEL_MAP.items()]
         for label_name, label in tqdm(label_dirs, desc="Processing labels"):
@@ -203,24 +206,33 @@ class VideoDataset(Dataset):
                         stride = 1  # 1프레임씩 이동하면서 시퀀스 추출
                         for start in range(0, len(joints_sequence) - sequence_length + 1, stride):
                             seq = joints_sequence[start:start + sequence_length]
-                            # confidence 값을 이용한 더 정확한 필터링
+                            # confidence 값을 이용한 더 정확한 필터링 (임계값 낮춤)
                             conf_scores = [np.mean([j[i*4+3] for i in range(17)]) for j in seq]
-                            valid_frames = sum([score > 0.3 for score in conf_scores])
+                            valid_frames = sum([score > 0.2 for score in conf_scores])  # 임계값 0.3 -> 0.2
                             
-                            if valid_frames >= sequence_length * 0.5:
+                            if valid_frames >= sequence_length * 0.3:  # 비율 0.5 -> 0.3
                                 self.sequences.append((np.stack(seq), label))
+                                label_counter[label_name] += 1
                                 
                 except Exception as e:
                     print(f"Error processing video {video_path}: {e}")
                     continue
                 
         print(f"Total sequences extracted: {len(self.sequences)}")
+        print("\nLabel distribution:")
+        for label_name, count in label_counter.items():
+            print(f"{label_name}: {count} sequences ({count/len(self.sequences)*100:.2f}%)")
+        
+        if len(self.sequences) == 0:
+            raise ValueError("No valid sequences were extracted from the videos!")
         
         # 메모리 정리
         del pose_model
         torch.cuda.empty_cache()
     
     def __getitem__(self, idx):
+        if idx >= len(self.sequences):
+            raise IndexError(f"Index {idx} out of range for dataset with {len(self.sequences)} sequences")
         sequence, label = self.sequences[idx]
         return torch.FloatTensor(sequence), torch.LongTensor([label])
         
@@ -395,7 +407,12 @@ if __name__ == "__main__":
     # Linux 경로로 수정
     base_dir = "E:/mldl/편집영상"
     dataset = VideoDataset(base_dir=base_dir)
-    print(f"Total sequences: {len(dataset)}")
+    total_sequences = len(dataset)
+    print(f"Total sequences: {total_sequences}")
+    
+    if total_sequences == 0:
+        print("Error: No sequences found in the dataset!")
+        exit(1)
     
     label_names = ['normal', 'theft', 'abandon', 'broken']
     # 시퀀스의 레이블만 추출하여 카운트
@@ -403,9 +420,13 @@ if __name__ == "__main__":
     for i, name in enumerate(label_names):
         print(f"{name} 데이터 개수: {label_counts[i]}")
     
+    # batch_size를 데이터셋 크기에 따라 조정
+    batch_size = min(16, total_sequences)
+    print(f"\nUsing batch size: {batch_size}")
+    
     train_loader = DataLoader(
         dataset, 
-        batch_size=16,
+        batch_size=batch_size,
         shuffle=True,
         num_workers=0,
         pin_memory=True
