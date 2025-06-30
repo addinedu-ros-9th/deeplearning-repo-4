@@ -476,6 +476,7 @@ class CCTVWidget(QWidget):
                 message = f"이상 행위가 감지되었습니다.\n사람 수: {person_count}명\n신뢰도: {confidence}"
             
             print(f"[GUI] AI 서버 알림 수신: {title} - {message}")
+            self.refresh()  # 알림 수신 후 데이터 새로고침
             
             # 시스템 알림 전송
             try:
