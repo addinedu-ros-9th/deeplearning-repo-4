@@ -181,14 +181,35 @@
 
 ### 딥러닝 모델 선발 과정
 ![딥러닝 모델 선발 과정](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/%EB%94%A5%EB%9F%AC%EB%8B%9D%20%EB%AA%A8%EB%8D%B8%20%EC%84%A0%EB%B0%9C%EA%B3%BC%EC%A0%951.png?raw=true)
+YOLO BBox 추출 + CNN 모델은 한 프레임을 판단하는 경우에는 우수했으나, 연속된 프레임을 보고 해당 행위를 검출하는 것에는 부족했습니다.
+YOLO Pose + LSTM 모델은 꽤 높은 성능을 보여주었으나, 단순한 모델 구조와 공간적 특징을 반영하지 못해 복잡한 동작을 인식할 수 없었습니다.
+YOLO Pose + ST-GCN 모델은 이러한 LSTM 모델의 단점을 조금이나마 개선한 모델로, 최종적으로 선정하게 되었습니다.
 
 ![딥러닝 모델 선발 과정2](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/%EB%94%A5%EB%9F%AC%EB%8B%9D%20%EB%AA%A8%EB%8D%B8%20%EC%84%A0%EB%B0%9C%EA%B3%BC%EC%A0%952.png?raw=true)
 
+L2A : AI 허브만 + LSTM 2레이어
+L2BA : AI 허브만 + LSTM 2레이어 베스트 모델(파라미터 개선)
+L2P : 실 데이터 전이학습 + LSTM 2 레이어 + 시퀀스 데이터 패딩 적용
+L2PL : 실 데이터 전이학습 + LSTM 2 레이어 + 시퀀스 이하 길이 데이터 제거
+L3 : 실 데이터 전이학습 + LSTM 3 레이어
+L3DU : 실 학습 데이터 일부 변경 후 전이학습 + LSTM 3 레이어
+SG : L3DU 모델과 같은 데이터에 + ST-GCN
+SGB : SG 베스트 모델(파라미터 개선)
+SGQ : SGB를 양자화한 모델
+
+LSTM 모델도 개선을 통해 많이 좋아졌으나, ST-GCN은 전반적으로 모두 높은 정확도를 보여주는 것을 알 수 있습니다.
+
 ![딥러닝 모델 구조1](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/%EB%94%A5%EB%9F%AC%EB%8B%9D%20%EB%AA%A8%EB%8D%B8%20%EA%B5%AC%EC%A1%B01.png?raw=true)
+
+ST-GCN은 단순히 관절의 X, Y 좌표 뿐만 아니라 인정 행렬 정보를 함께 입력값으로 넣어주며 특징 추출에 활용합니다.
 
 ![딥러닝 모델 구조2](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/%EB%94%A5%EB%9F%AC%EB%8B%9D%20%EB%AA%A8%EB%8D%B8%EA%B5%AC%EC%A1%B02.png?raw=true)
 
+인접 행렬 A에서 이웃된 노드의 정보를 함께 넣어줌에 따라 시간적 변화 뿐만 아니라 공간적 변화를 반영합니다.
+
 ![딥러닝 학습 결과](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/%EB%94%A5%EB%9F%AC%EB%8B%9D%20%ED%95%99%EC%8A%B5%20%EA%B2%B0%EA%B3%BC.png?raw=true)
+
+Theft 라벨에서 비교적 낮은 성능을 보이는 이유는 Theft 행위의 시간이 다른 행위에 비해 짧고, 빠른 시간 안에 일어나기 때문입니다. 학습 데이터를 추가하거나, 데이터 증강 기법을 통해 성능 개선을 기대할 수 있습니다.
 
 ### GUI
 GUI 파일 구조
@@ -253,5 +274,5 @@ layout 의 컴포넌트 : cctv / dashboard / detect_log <br/>
 |:---:|---|
 | 김범진 |  |
 | 김채연 |  | 
-| 구민제 |  | 
+| 구민제 | 모델 학습과 시각화에 대한 큰 영감을 얻게 되어 너무 만족스러운 프로젝트였어요. How nice! | 
 | 최원호 | GUI를 작업하고 서버와 통신을 하면서 전체적인 통신 과정을 익히게 되었습니다. 또한 딥러닝 코드를 만지게 되면서, 앱에서 사용되는 AI 모델을 어떻게 학습시키는지 알 수 있는 시간이었습니다. AI 서버와 중앙 서버를 분리하면서 트래픽을 분산시켜 처리하고, 각각의 아키텍쳐들의 실제 코드가 어떻게 구성되는지 어떠한 실질적인 역할을 하는지 몸소 와닿는 경험이 되었습니다. | 
