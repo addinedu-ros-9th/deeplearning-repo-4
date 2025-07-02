@@ -14,7 +14,7 @@
 
 # 00. 팀 소개
 ### 팀명 : GIGACHAD
-![로고]()
+![로고](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/%EB%A1%9C%EA%B3%A0%E3%84%B9.png?raw=true)
 
 언제나 우리의 마음을 바라봐주고 관리해주는 기가채드처럼 <br/>
 언제나 우리 매장을 바라봐주고 관리해준다는 컨셉
