@@ -50,7 +50,7 @@
 
 # 01. 프로젝트 소개
 ### 주제 선정 배경
-![주제 선정 배경1]()
+![주제 선정 배경1](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/%EC%A3%BC%EC%A0%9C%20%EC%84%A0%EC%A0%95%20%EB%B0%B0%EA%B2%BD1.png?raw=true)
 
 무인매장 CCTV를 주제로 선정한 이유 <br/>
 - 매장 내 감시인력의 부재 <br/>
@@ -72,8 +72,8 @@
 | 6 | 고객의 동선을 파악해서 최적의 상품 배치를 추천해준다. |
 | 7 | 단골 손님과 일반 손님을 구분 할 수 있다. |
 
-[ **요약** ]
-![사용자 요구사항]()
+[ **요약** ] <br/>
+![사용자 요구사항](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/%EC%82%AC%EC%9A%A9%EC%9E%90%20%EC%9A%94%EA%B5%AC%EC%82%AC%ED%95%AD.png?raw=true)
 
 사용자 요구사항을 크게 3가지로 요약하면, <br/>
 '불법 감지 / 통계 / 기록/' 이렇게 3가지로 요약할 수 있습니다.
@@ -94,49 +94,49 @@
 | SR_10 | 통계 시각화/조회 | 데이터 통계 조회 기능 | 사용자는 고객 방문 횟수, 평균 체류 시간 통계를 일별/월별로 조회할 수 있다. <br/> 통계 데이터를 그래프(선형, 막대, 파이 차트) 형태로 시각화하여 사용자에게 보여준다. | O |
 | SR_11 | 통계 시각화/조회 | 불법행위 통계 조회 기능 | 사용자는 매장에서 발생한 불법행위의 유형별 / 건수별 통계를 볼 수 있다. <br/> 특정 날짜 또는 시간대에 발생한 불법행위 건수를 조회 할 수 있다. <br/> 전체 불법행위 유형(절도, 파손, 유기)별 비율을 시각화 된 형태로 조회 할 수 있다. | R |
 
-![System Requirements]()
+![System Requirements](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/system%20requirements.png?raw=true)
 
 기능 리스트를 요약하면 크게 3가지로 나눌 수 있습니다. <br/>
 불법행위 감지 기능 / 통계 시각확 기능 / 기록 및 클립 조회 기능 
 
 ### 서비스 흐름
-![서비스 흐름]()
+![서비스 흐름](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/%EC%84%9C%EB%B9%84%EC%8A%A4%20%ED%9D%90%EB%A6%84.png?raw=true)
 
 ### System Architecture
-![System Architecture]()
+![System Architecture](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/system%20architecture.png?raw=true)
 
 ### 시퀀스 다이어그램
 
 <details>
 <summary>SC-01 : 불법행위 감지 및 관리자 알림 및 영상 자동저장 [클릭] </summary>
 
-![SC-01]()
+![SC-01](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/SC-01.png?raw=true)
 
 </details>
 
 <details>
 <summary> SC-02 : 불법행위 영상 검토 및 다시보기 [클릭] </summary>
 
-![SC-02]()
+![SC-02](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/SC-02.png?raw=true)
 
 </details>
 
 <details>
 <summary> SC-03 : CCTV 실시간 모니터링 [클릭] </summary>
 
-![SC-03]()
+![SC-03](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/SC-03.png?raw=true)
 
 </details>
 
 <details>
 <summary> SC-04 : 불법행위 통계 데이터 생성 및 조회 [클릭] </summary>
 
-![SC-04]()
+![SC-04](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/SC-04.png?raw=true)
 
 </details>
 
 ### ERD
-![ERD]()
+![ERD](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/erd.png?raw=true)
 
 ### Interface Specification
 #### status code 
@@ -166,11 +166,11 @@
 # 03. 프로젝트 구현
 ## 딥러닝
 ### 데이터 전처리
-![데이터 전처리1]()
+![데이터 전처리1](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/%EB%8D%B0%EC%9D%B4%ED%84%B0%20%EC%A0%84%EC%B2%98%EB%A6%AC1.png?raw=true)
 
-![데이터 전처리2]()
+![데이터 전처리2](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/%EB%8D%B0%EC%9D%B4%ED%84%B0%20%EC%A0%84%EC%B2%98%EB%A6%AC2.png?raw=true)
 
-![데이터 전처리3]()
+![데이터 전처리3](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/%EB%8D%B0%EC%9D%B4%ED%84%B0%20%EC%A0%84%EC%B2%98%EB%A6%AC3.png?raw=true)
 
 데이터 전처리 과정은 
 - 영상 촬영 (행위 별로 100개씩 총 400개 영상)
@@ -180,20 +180,20 @@
 순으로 진행되었습니다.
 
 ### 딥러닝 모델 선발 과정
-![딥러닝 모델 선발 과정]()
+![딥러닝 모델 선발 과정](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/%EB%94%A5%EB%9F%AC%EB%8B%9D%20%EB%AA%A8%EB%8D%B8%20%EC%84%A0%EB%B0%9C%EA%B3%BC%EC%A0%951.png?raw=true)
 
-![딥러닝 모델 선발 과정2]()
+![딥러닝 모델 선발 과정2](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/%EB%94%A5%EB%9F%AC%EB%8B%9D%20%EB%AA%A8%EB%8D%B8%20%EC%84%A0%EB%B0%9C%EA%B3%BC%EC%A0%952.png?raw=true)
 
-![딥러닝 모델 구조1]()
+![딥러닝 모델 구조1](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/%EB%94%A5%EB%9F%AC%EB%8B%9D%20%EB%AA%A8%EB%8D%B8%20%EA%B5%AC%EC%A1%B01.png?raw=true)
 
-![딥러닝 모델 구조2]()
+![딥러닝 모델 구조2](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/%EB%94%A5%EB%9F%AC%EB%8B%9D%20%EB%AA%A8%EB%8D%B8%EA%B5%AC%EC%A1%B02.png?raw=true)
 
-![딥러닝 학습 결과]()
+![딥러닝 학습 결과](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/%EB%94%A5%EB%9F%AC%EB%8B%9D%20%ED%95%99%EC%8A%B5%20%EA%B2%B0%EA%B3%BC.png?raw=true)
 
 ### GUI
 GUI 파일 구조
 
-![gui 파일 구조]()
+![gui 파일 구조](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/gui%20%EA%B5%AC%EC%A1%B0.png?raw=true)
 
 진입점 : main.py <br/>
 화면 전환 : main을 통해 login.py <-> layout.py <br/>
@@ -202,50 +202,50 @@ layout 의 컴포넌트 : cctv / dashboard / detect_log <br/>
 스타일 : style.py 에서 모든 qss파일 임포트해옴 <br/>
 
 #### 화면 구성도 : 로그인
-![화면 구성도 로그인]()
+![화면 구성도 로그인](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/%EB%A1%9C%EA%B7%B8%EC%9D%B8%20%ED%99%94%EB%A9%B4.png?raw=true)
 
 #### 화면 구성도 : CCTV
-![화면 구성도 CCTV]()
+![화면 구성도 CCTV](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/cctv%20%ED%99%94%EB%A9%B4.png?raw=true)
 
 #### 화면 구성도 : Dashboard
-![화면 구성도 Dashboard]()
+![화면 구성도 Dashboard](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/dashboard%20%ED%99%94%EB%A9%B4.png?raw=true)
 
 #### 화면 구성도 : Detect Log
-![화면 구성도 Detect Log]()
+![화면 구성도 Detect Log](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/detect%20log%20%ED%99%94%EB%A9%B4.png?raw=true)
 
 # 04. 프로젝트 결과
 ### 로그인 기능
-![로그인 기능]()
+![로그인 기능](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/%EB%A1%9C%EA%B7%B8%EC%9D%B8%20%EA%B8%B0%EB%8A%A5.gif?raw=true)
 
 ### CCTV : 불법행위 감지 기능 (유기)
-![불법행위 유기]()
+![불법행위 유기](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/%EC%9C%A0%EA%B8%B0.gif?raw=true)
 
 ### CCTV : 불법행위 감지 기능 (절도)
-![불법행위 절도]()
+![불법행위 절도](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/%EC%A0%88%EB%8F%84.gif?raw=true)
 
 ### CCTV : 불법행위 감지 기능 (파손)
-![불법행위 파손]()
+![불법행위 파손](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/%ED%8C%8C%EC%86%90.gif?raw=true)
 
 ### CCTV : 불법행위 감지 기능 (전등 끔)
-![불법행위 전등 끔]()
+![불법행위 전등 끔](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/%EC%A0%84%EB%93%B1-%EB%81%94.gif?raw=true)
 
 ### CCTV : 불법행위 감지 기능 (정상)
-![불법행위 정상]()
+![불법행위 정상](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/%EC%A0%95%EC%83%81.gif?raw=true)
 
 ### CCTV : 알림 및 클립 재생
-![알림 및 클립 재생]()
+![알림 및 클립 재생](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/%EC%95%8C%EB%A6%BC%20%EB%B0%8F%20%ED%81%B4%EB%A6%BD%20%EB%B3%B4%EA%B8%B0.gif?raw=true)
 
 ### Dashboard : 불법행위 통계 조회 기능
-![Dashboard 통계 조회]()
+![Dashboard 통계 조회](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/%ED%86%B5%EA%B3%84%20%EC%A1%B0%ED%9A%8C%20%EA%B8%B0%EB%8A%A5.gif?raw=true)
 
 ### Detect Log : 불법 행위 기록 조회 > 필터 기능
-![기록조회 필터 기능]()
+![기록조회 필터 기능](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/%EA%B8%B0%EB%A1%9D%EC%A1%B0%ED%9A%8C%20%ED%95%84%ED%84%B0%20%EA%B8%B0%EB%8A%A5.gif?raw=true)
 
 ### Detect Log : 불법 행위 기록 조회 > 불법 종류 변경 / 확정 기능
-![기록조회 종류 변경 및 확정]()
+![기록조회 종류 변경 및 확정](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/%EC%A2%85%EB%A5%98%20%EB%B3%80%EA%B2%BD.gif?raw=true)
  
 ### Detect Log : 불법 행위 기록 조회 > 클립 삭제 기능
-![클립 삭제]()
+![클립 삭제](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/%EB%94%94%ED%85%8D%ED%8A%B8%20%EB%A1%9C%EA%B7%B8%20%ED%81%B4%EB%A6%BD%20%EC%82%AD%EC%A0%9C.gif?raw=true)
 
 # 마무리
 ## 소감
