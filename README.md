@@ -201,7 +201,7 @@ LSTM 모델도 개선을 통해 많이 좋아졌으나, ST-GCN은 전반적으�
 
 ![딥러닝 모델 구조1](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/%EB%94%A5%EB%9F%AC%EB%8B%9D%20%EB%AA%A8%EB%8D%B8%20%EA%B5%AC%EC%A1%B01.png?raw=true)
 
-ST-GCN은 단순히 관절의 X, Y 좌표 뿐만 아니라 인정 행렬 정보를 함께 입력값으로 넣어주며 특징 추출에 활용합니다.
+ST-GCN은 단순히 관절의 X, Y 좌표 뿐만 아니라 인접 행렬 정보를 함께 입력값으로 넣어주어 특징 추출에 활용합니다.
 
 ![딥러닝 모델 구조2](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/%EB%94%A5%EB%9F%AC%EB%8B%9D%20%EB%AA%A8%EB%8D%B8%EA%B5%AC%EC%A1%B02.png?raw=true)
 
@@ -209,7 +209,7 @@ ST-GCN은 단순히 관절의 X, Y 좌표 뿐만 아니라 인정 행렬 정보�
 
 ![딥러닝 학습 결과](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/%EB%94%A5%EB%9F%AC%EB%8B%9D%20%ED%95%99%EC%8A%B5%20%EA%B2%B0%EA%B3%BC.png?raw=true)
 
-Theft 라벨에서 비교적 낮은 성능을 보이는 이유는 Theft 행위의 시간이 다른 행위에 비해 짧고, 빠른 시간 안에 일어나기 때문입니다. 학습 데이터를 추가하거나, 데이터 증강 기법을 통해 성능 개선을 기대할 수 있습니다.
+Theft 라벨에서 비교적 낮은 성능을 보이는 이유는 Theft 행위의 시간이 다른 행위에 비해 짧고, 다양한 패턴으로 일어나기 때문입니다. 학습 데이터를 추가하거나, 데이터 증강 기법을 통해 성능 개선을 기대할 수 있습니다.
 
 ### GUI
 GUI 파일 구조
