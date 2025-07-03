@@ -187,15 +187,15 @@ YOLO Pose + ST-GCN 모델은 이러한 LSTM 모델의 단점을 조금이나마 
 
 ![딥러닝 모델 선발 과정2](https://github.com/addinedu-ros-9th/deeplearning-repo-4/blob/dev/readme_images/%EB%94%A5%EB%9F%AC%EB%8B%9D%20%EB%AA%A8%EB%8D%B8%20%EC%84%A0%EB%B0%9C%EA%B3%BC%EC%A0%952.png?raw=true)
 
-L2A : AI 허브만 + LSTM 2레이어
-L2BA : AI 허브만 + LSTM 2레이어 베스트 모델(파라미터 개선)
-L2P : 실 데이터 전이학습 + LSTM 2 레이어 + 시퀀스 데이터 패딩 적용
-L2PL : 실 데이터 전이학습 + LSTM 2 레이어 + 시퀀스 이하 길이 데이터 제거
-L3 : 실 데이터 전이학습 + LSTM 3 레이어
-L3DU : 실 학습 데이터 일부 변경 후 전이학습 + LSTM 3 레이어
-SG : L3DU 모델과 같은 데이터에 + ST-GCN
-SGB : SG 베스트 모델(파라미터 개선)
-SGQ : SGB를 양자화한 모델
+- L2A : AI 허브만 + LSTM 2레이어
+- L2BA : AI 허브만 + LSTM 2레이어 베스트 모델(파라미터 개선)
+- L2P : 실 데이터 전이학습 + LSTM 2 레이어 + 시퀀스 데이터 패딩 적용
+- L2PL : 실 데이터 전이학습 + LSTM 2 레이어 + 시퀀스 이하 길이 데이터 제거
+- L3 : 실 데이터 전이학습 + LSTM 3 레이어
+- L3DU : 실 학습 데이터 일부 변경 후 전이학습 + LSTM 3 레이어
+- SG : L3DU 모델과 같은 데이터에 + ST-GCN
+- SGB : SG 베스트 모델(파라미터 개선)
+- SGQ : SGB를 양자화한 모델
 
 LSTM 모델도 개선을 통해 많이 좋아졌으나, ST-GCN은 전반적으로 모두 높은 정확도를 보여주는 것을 알 수 있습니다.
 
