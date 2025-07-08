@@ -190,11 +190,19 @@ def load_model(model_path):
     """
     모델 로드 함수 - TorchScript 모델도 지원
     """
-    if model_path.endswith('.pt') and 'torchscript' in model_path:
-        # TorchScript 모델 로드
-        print(f"[AI 서버] TorchScript 모델 로딩: {model_path}")
-        model = torch.jit.load(model_path, map_location=device)
-        model.eval()
+    if model_path.endswith('.pt') or model_path.endswith('.torchscript'):
+        try:
+            model = torch.jit.load(model_path, map_location=device)
+            model.eval()
+            print(f"TorchScript 모델 로딩: {model_path}")
+            return model
+        except Exception:
+            # fallback: 일반 state_dict
+            print(f"[AI 서버] 일반 PyTorch 모델 로딩: {model_path}")
+            model = AnomalyDetector()
+            model.load_state_dict(torch.load(model_path, map_location=device))
+            model = model.to(device)
+            model.eval()
     else:
         # 일반 PyTorch 모델 로드
         print(f"[AI 서버] 일반 PyTorch 모델 로딩: {model_path}")
@@ -233,13 +241,22 @@ def draw_predictions(frame, probs, current_prediction, fps=None):
     y_offset = 80
     max_prob_idx = np.argmax(probs)
     for i, (label, prob) in enumerate(zip(LABEL_NAMES, probs)):
+        # prob이 float이 아니면 float로 변환
+        if isinstance(prob, np.ndarray):
+            if prob.size == 1:
+                prob_scalar = float(prob)
+            else:
+                prob_scalar = float(prob.flat[0])  # 첫 번째 값만 사용
+        else:
+            prob_scalar = float(prob)
+            
         if i == max_prob_idx:
             color = (0, 0, 255)
-            cv2.putText(frame, f"{label}: {prob:.3f} (MAX)", 
+            cv2.putText(frame, f"{label}: {prob_scalar:.3f} (MAX)", 
                         (20, y_offset + i * 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
         else:
             color = (200, 200, 200)
-            cv2.putText(frame, f"{label}: {prob:.3f}", 
+            cv2.putText(frame, f"{label}: {prob_scalar:.3f}", 
                         (20, y_offset + i * 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
 
     return frame
@@ -707,14 +724,15 @@ def realtime_anomaly_detection(model_path, pose_model_path='yolov8n-pose.pt', se
                             input_tensor = torch.FloatTensor(list(joints_sequence)).unsqueeze(0).to(device)
                             with torch.no_grad():
                                 logits = model(input_tensor)
-                                probs = F.softmax(logits, dim=1).cpu().numpy()[0]
+                                # test_anormaly.py와 동일한 방식으로 처리
+                                if logits.ndim == 3:
+                                    logits = logits[:, -1, :]
+                                elif logits.ndim == 2:
+                                    logits = logits[-1, :]
+                                probs = F.softmax(logits, dim=-1).cpu().numpy().flatten()
                             
-                            # 신뢰도가 0.8 이상일 때만 해당 라벨로 예측, 그 이하는 Normal
-                            max_prob = np.max(probs)
-                            if max_prob >= CONFIDENCE_THRESHOLD:
-                                current_prediction = np.argmax(probs)
-                            else:
-                                current_prediction = 0  # Normal로 분류
+                            # test_anormaly.py와 동일하게 단순 argmax 사용
+                            current_prediction = np.argmax(probs)
                             
                             frame = draw_predictions(frame, probs, current_prediction)
                             joints_sequence.popleft()
@@ -952,7 +970,7 @@ if __name__ == "__main__":
     # 프로젝트 루트를 기준으로 모델 파일의 절대 경로 생성
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     # TorchScript 최적화된 모델 사용
-    model_path = os.path.join(project_root, "saved_models/스트그쓰느스트1_torchscript.pt")
+    model_path = os.path.join(project_root, "saved_models/L2BPL.pt")
     
     # UDP 설정 - cctv_udp_client.py와 호환
     udp_ip = "0.0.0.0"  # 모든 인터페이스에서 수신
